@@ -1,0 +1,7 @@
+# Python
+__pycache__/
+*.pyc
+
+# Sample/test files in root (keep examples/)
+/*.json
+/*.txt

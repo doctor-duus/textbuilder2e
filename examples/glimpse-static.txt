@@ -1,0 +1,114 @@
+============================================================
+  Glimpse, goblin xbowslinger (rogue) 12th
+  STR +0  DEX +5  CON +4  INT +2  WIS +0  CHA +5
+============================================================
+
+BASIC INFORMATION
+----------------------------------------
+Class:      Gunslinger 12
+Ancestry:   Goblin
+Heritage:   Dokkaebi Goblin
+Background: Blow-In (Deception)
+Size:       Small
+
+DEFENSES
+----------------------------------------
+HP: 162
+AC: 29
+
+Saving Throws:
+  Fort: +20 (Expert)
+  Ref: +23 (Master)
+  Will: +16 (Expert)
+
+Perception: +18 (Master)
+Speed: 30 ft
+
+SKILLS
+----------------------------------------
+  Acrobatics: +21 (Expert)
+  Arcana: +16 (Trained)
+  Athletics: +14 (Trained)
+  Crafting: +16 (Trained)
+  Deception: +23 (Master)
+  Diplomacy: +19 (Trained)
+  Intimidation: +23 (Master)
+  Medicine: +14 (Trained)
+  Stealth: +23 (Master)
+  Thievery: +19 (Trained)
+
+Lore Skills:
+  Underworld Lore: +16 (Trained)
+
+CLASS FEATURES
+----------------------------------------
+  - Way of the Pistolero
+  - Slinger's Precision
+  - Darkvision
+  - Raconteur's Reload
+  - Ten Paces
+  - Deception
+  - Surprise Attack
+  - Stubborn
+  - Sneak Attack
+  - Gunslinger Weapon Mastery
+  - Perception Mastery
+  - Weapon Specialization
+  - Advanced Deed
+  - Gunslinger Expertise
+  - Pistolero's Retort
+  - Blast Dodger
+  - Dokkaebi Goblin
+
+FEATS
+----------------------------------------
+  Heritages:
+    Lvl 1: Dokkaebi Goblin
+  Ancestry Feats:
+    Lvl 1: Burn It!
+    Lvl 5: Very Sneaky
+    Lvl 9: Cave Climber
+  Class Feats:
+    Lvl 1: Munitions Crafter
+    Lvl 2: Crossbow Crack Shot
+    Lvl 4: Running Reload
+    Lvl 6: Advanced Trickery
+    Lvl 8: Grit and Tenacity
+    Lvl 10: Redirecting Shot
+    Lvl 12: Unshakable Grit
+  Archetype Feats:
+    Lvl 2: Rogue Dedication
+    Lvl 4: Sneak Attacker
+    Lvl 6: Basic Trickery
+    Lvl 8: Advanced Trickery
+    Lvl 10: Skill Mastery
+    Lvl 12: Advanced Trickery
+  Skill Feats:
+    Lvl 2: Battle Medicine
+    Lvl 4: Confabulator
+    Lvl 6: Fleeing Diversion
+    Lvl 8: Godless Healing
+    Lvl 10: Terrified Retreat
+    Lvl 10: Battle Cry
+    Lvl 12: Foil Senses
+  General Feats:
+    Lvl 3: Fleet
+    Lvl 7: Toughness
+    Lvl 11: Incredible Investiture
+  Awarded Feats:
+    Lvl 1: Lengthy Diversion
+    Lvl 1: Alchemical Crafting
+  Rogue Feat:
+    Lvl 6: Nimble Dodge
+    Lvl 6: You're Next
+    Lvl 8: Dread Striker
+    Lvl 12: Light Step
+
+WEAPONS
+----------------------------------------
+  +1 Striking Sukgung
+    Attack: +24, Damage: 2d8+3 P
+
+MONEY
+----------------------------------------
+  15 gp

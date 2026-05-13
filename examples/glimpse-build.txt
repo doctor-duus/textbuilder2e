@@ -1,0 +1,147 @@
+============================================================
+  Glimpse, goblin xbowslinger (rogue) 12th
+  STR +0  DEX +5  CON +4  INT +2  WIS +0  CHA +5
+  CHARACTER BUILD PROGRESSION
+============================================================
+
+ANCESTRY & BACKGROUND
+----------------------------------------
+Ancestry: Goblin
+Heritage: Dokkaebi Goblin
+  Ancestry Boosts: Dex, Cha
+  Free Boost: Con
+  Ancestry Flaw: Wis
+
+Background: Blow-In (Deception)
+  Background Boosts: Dex, Cha
+  Lore: Underworld
+
+CLASS
+----------------------------------------
+Class: Gunslinger
+  Key Ability: DEX
+  Class Boost: Dex
+  Subclass: Way of the Pistolero
+
+DEFENSE
+----------------------------------------
+HP: 162
+AC: 29
+
+Saving Throws:
+  Fort: +20 (Expert)
+  Ref: +23 (Master)
+  Will: +16 (Expert)
+
+Perception: +18 (Master)
+Speed: 30 ft
+
+OFFENSE
+----------------------------------------
+  +1 Striking Sukgung: +24 / 2d8+3 P
+
+SKILLS
+----------------------------------------
+  Acrobatics: +21 (Expert)
+  Arcana: +16 (Trained)
+  Athletics: +14 (Trained)
+  Crafting: +16 (Trained)
+  Deception: +23 (Master)
+  Diplomacy: +19 (Trained)
+  Intimidation: +23 (Master)
+  Medicine: +14 (Trained)
+  Stealth: +23 (Master)
+  Thievery: +19 (Trained)
+
+Lore Skills:
+  Underworld Lore: +16 (Trained)
+
+LEVEL PROGRESSION
+========================================
+
+LEVEL 1
+--------------------
+  Ability Boosts: Dex, Con, Cha, Wis
+  Lengthy Diversion*
+  Alchemical Crafting*
+  Heritage: Dokkaebi Goblin
+  Class: Munitions Crafter
+  Ancestry: Burn It!
+  Class Features: Slinger's Precision, Darkvision, Raconteur's Reload
+
+LEVEL 2
+--------------------
+  Ability Boosts: Cha
+  Skill: Battle Medicine
+  Class: Crossbow Crack Shot
+  Archetype: Rogue Dedication
+
+LEVEL 3
+--------------------
+  Ability Boosts: Con
+  General: Fleet
+  Skill Increase: ___
+
+LEVEL 4
+--------------------
+  Ability Boosts: Int
+  Skill: Confabulator
+  Class: Running Reload
+  Archetype: Sneak Attacker
+
+LEVEL 5
+--------------------
+  Ability Boosts: Dex
+  Ancestry: Very Sneaky
+  Skill Increase: ___
+
+LEVEL 6
+--------------------
+  Skill: Fleeing Diversion
+  Class: Advanced Trickery
+  Rogue: Nimble Dodge
+  Archetype: Basic Trickery
+  Rogue: You're Next
+
+LEVEL 7
+--------------------
+  Ability Boosts: Dex
+  General: Toughness
+  Skill Increase: ___
+
+LEVEL 8
+--------------------
+  Ability Boosts: Con
+  Skill: Godless Healing
+  Class: Grit and Tenacity
+  Archetype: Advanced Trickery
+  Rogue: Dread Striker
+
+LEVEL 9
+--------------------
+  Ability Boosts: Int
+  Ancestry: Cave Climber
+  Skill Increase: ___
+
+LEVEL 10
+--------------------
+  Ability Boosts: Cha
+  Skill: Terrified Retreat
+  Class: Redirecting Shot
+  Archetype: Skill Mastery
+  Skill: Battle Cry
+
+LEVEL 11
+--------------------
+  General: Incredible Investiture
+  Skill Increase: ___
+
+LEVEL 12
+--------------------
+  Ability Boosts: Cha
+  Skill: Foil Senses
+  Class: Unshakable Grit
+  Archetype: Advanced Trickery
+  Rogue: Light Step
+
+* = Granted by ancestry, heritage, or background
