@@ -1379,10 +1379,10 @@ Templates:
   condensed        Compact format: feats grouped by type, no levels shown
 
 Examples:
-  %(prog)s character.json                 Output build template to character.txt
-  %(prog)s character.json -t static       Static character sheet
-  %(prog)s character.json -t condensed    Condensed format
-  %(prog)s -c --stdout                    Read JSON from clipboard, print to stdout
+  %(prog)s character.json                 Output to character-build.txt
+  %(prog)s character.json -t static       Output to character-static.txt
+  %(prog)s character.json -t condensed    Output to character-condensed.txt
+  %(prog)s -c --stdout                    Read from clipboard, print to stdout
 """
     )
 
@@ -1393,7 +1393,7 @@ Examples:
                         help="Format for social media post (overrides --template)")
     parser.add_argument("-w", "--width", type=int, default=71,
                         help="Line width for word wrap (default: 71, 0 to disable)")
-    parser.add_argument("-o", "--output", help="Output file (default: <input>.txt)")
+    parser.add_argument("-o", "--output", help="Output file (default: <input>-<template>.txt)")
     parser.add_argument("-c", "--clipboard", action="store_true",
                         help="Read JSON from clipboard (macOS)")
     parser.add_argument("--stdout", action="store_true",
@@ -1467,7 +1467,9 @@ Examples:
         if args.output:
             output_path = Path(args.output)
         elif input_path:
-            output_path = input_path.with_suffix(".txt")
+            # Include template/post format in filename: name-build.txt, name-static.txt, etc.
+            format_name = args.post if args.post else args.template
+            output_path = input_path.parent / f"{input_path.stem}-{format_name}.txt"
         else:
             print(formatted)
             return

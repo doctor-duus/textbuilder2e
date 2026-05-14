@@ -39,13 +39,13 @@ First, export your character from Pathbuilder 2e:
 Then convert to text:
 
 ```bash
-# Build progression (default)
+# Build progression (default) -> character-build.txt
 textbuilder2e.py character.json
 
-# Static character sheet
+# Static character sheet -> character-static.txt
 textbuilder2e.py character.json -t static
 
-# Condensed format
+# Condensed format -> character-condensed.txt
 textbuilder2e.py character.json -t condensed
 
 # Read from clipboard, print to stdout
@@ -54,10 +54,10 @@ textbuilder2e.py -c --stdout
 # Specify output file
 textbuilder2e.py character.json -t static -o mycharacter.txt
 
-# Format for Reddit post (markdown)
-textbuilder2e.py character.json -p reddit --stdout
+# Format for Reddit post -> character-reddit.txt
+textbuilder2e.py character.json -p reddit
 
-# Format for Bluesky post (compact)
+# Format for Bluesky post (print to stdout)
 textbuilder2e.py character.json -p bluesky --stdout
 ```
 
@@ -98,7 +98,7 @@ For sharing builds on social media:
 | `-t`, `--template` | Output template: `build`, `static`, or `condensed` |
 | `-p`, `--post` | Social media format: `reddit` or `bluesky` (overrides template) |
 | `-w`, `--width` | Line width for word wrap (default: 71, 0 to disable) |
-| `-o`, `--output` | Output file (default: `<input>.txt`) |
+| `-o`, `--output` | Output file (default: `<input>-<template>.txt`) |
 | `-c`, `--clipboard` | Read JSON from clipboard (macOS) |
 | `--stdout` | Print to stdout instead of file |
 | `--no-prompt` | Skip interactive skill increase prompts (build only) |
