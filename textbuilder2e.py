@@ -560,7 +560,6 @@ def format_post_reddit(data: dict) -> str:
     lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
     lines.append(f"Background: {background}")
     lines.append(f"`{' | '.join(mods)}`")
-    lines.append("")
 
     # Feats grouped by type
     feats = build.get("feats", [])
@@ -599,7 +598,8 @@ def format_post_reddit(data: dict) -> str:
             if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
                 lines.append(f"**{group}:** {', '.join(feat_list)}")
 
-    return "\n".join(lines)
+    # Reddit markdown needs double newlines for line breaks
+    return "\n\n".join(lines)
 
 
 def format_post_bluesky(data: dict) -> str:
@@ -1135,8 +1135,9 @@ Examples:
                 char_class, char_level, profs, abilities)
         formatted = format_character_build(data, skill_increases, int_skill_training)
 
-    # Apply word wrap
-    formatted = wrap_text(formatted, args.width)
+    # Apply word wrap (skip for post formats - platforms handle their own wrapping)
+    if not args.post:
+        formatted = wrap_text(formatted, args.width)
 
     # Determine output destination
     if args.stdout or (args.clipboard and not args.output):
