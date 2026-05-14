@@ -4,10 +4,17 @@ Convert [Pathbuilder 2e](https://pathbuilder2e.com/) JSON exports to human-reada
 
 ## Features
 
-- **Build format** (default): Level-by-level progression showing choices at each level
-- **Static format**: Complete character sheet with final stats
+- **Multiple templates**: Build progression, static sheet, or condensed format
 - **Clipboard support**: Read JSON directly from clipboard (macOS)
 - **Remaster compatible**: Uses ability modifiers (not scores), no alignment
+
+## Templates
+
+| Template | Description |
+|----------|-------------|
+| `build` (default) | Level-by-level progression showing choices at each level |
+| `static` | Complete character sheet with all stats and features |
+| `condensed` | Compact format: feats grouped by type, no levels shown |
 
 ## Installation
 
@@ -31,27 +38,31 @@ First, export your character from Pathbuilder 2e:
 Then convert to text:
 
 ```bash
-# Build progression format (default)
+# Build progression (default)
 textbuilder2e.py character.json
 
 # Static character sheet
-textbuilder2e.py character.json --static
+textbuilder2e.py character.json -t static
+
+# Condensed format
+textbuilder2e.py character.json -t condensed
 
 # Read from clipboard, print to stdout
 textbuilder2e.py -c --stdout
 
 # Specify output file
-textbuilder2e.py character.json -o mycharacter.txt
+textbuilder2e.py character.json -t static -o mycharacter.txt
 ```
 
 ## Output Examples
 
 See the [examples/](examples/) folder for sample output:
 - `glimpse.json` - Pathbuilder 2e JSON export
-- `glimpse-static.txt` - Static character sheet format
-- `glimpse-build.txt` - Build progression format
+- `glimpse-static.txt` - Static character sheet
+- `glimpse-build.txt` - Build progression
+- `glimpse-condensed.txt` - Condensed format
 
-### Header (both formats)
+### Header (all templates)
 ```
 ============================================================
   Glimpse, goblin xbowslinger (rogue) 12th
@@ -59,21 +70,24 @@ See the [examples/](examples/) folder for sample output:
 ============================================================
 ```
 
-### Static Format
-Shows complete character sheet: basic info, defenses, saves, skills, feats, equipment.
+### Static Template
+Shows complete character sheet: basic info, defenses, saves, skills, class features, feats with levels, equipment.
 
-### Build Format
+### Build Template
 Shows level-by-level progression: ancestry/background choices, class features, feat selections at each level, ability boosts.
+
+### Condensed Template
+Compact format for sharing: just the key choices with feats grouped by type (Ancestry, Class, Skill, General).
 
 ## Options
 
 | Flag | Description |
 |------|-------------|
+| `-t`, `--template` | Output template: `build`, `static`, or `condensed` |
 | `-o`, `--output` | Output file (default: `<input>.txt`) |
 | `-c`, `--clipboard` | Read JSON from clipboard (macOS) |
-| `--static` | Use static character sheet format |
 | `--stdout` | Print to stdout instead of file |
-| `--no-prompt` | Skip interactive skill increase prompts |
+| `--no-prompt` | Skip interactive skill increase prompts (build only) |
 
 ## Requirements
 

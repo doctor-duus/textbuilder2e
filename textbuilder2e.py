@@ -3,21 +3,22 @@
 Textbuilder2e - Convert Pathbuilder 2e JSON exports to human-readable text.
 
 Usage:
-    python textbuilder2e.py <json_file>              # Build format, outputs to <json_file>.txt
-    python textbuilder2e.py <json_file> -o out.txt   # Specify output file
-    python textbuilder2e.py <json_file> --static     # Static character sheet format
-    python textbuilder2e.py -c                       # Read from clipboard (macOS)
-    python textbuilder2e.py -c --stdout              # Clipboard to stdout
+    python textbuilder2e.py <json_file>                 # Default (build) template
+    python textbuilder2e.py <json_file> -t static       # Static character sheet
+    python textbuilder2e.py <json_file> -t condensed    # Condensed format
+    python textbuilder2e.py -c --stdout                 # Read from clipboard, print to stdout
 
-Formats:
+Templates:
     build (default)  Level-by-level progression showing choices at each level
-    static           Complete character sheet with final stats
+    static           Complete character sheet with all stats and features
+    condensed        Compact format: just feats grouped by type, no levels shown
 """
 
 import argparse
 import json
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 
@@ -42,6 +43,92 @@ def proficiency_rank(level: int) -> str:
     """Convert proficiency number to rank name."""
     ranks = {0: "Untrained", 2: "Trained", 4: "Expert", 6: "Master", 8: "Legendary"}
     return ranks.get(level, f"Unknown ({level})")
+
+
+def wrap_text(text: str, width: int = 71) -> str:
+    """Word wrap text while preserving indentation.
+
+    Each line's leading whitespace is detected and used as the indent
+    for any wrapped continuation lines.
+
+    For lines containing comma-separated lists, wraps at comma boundaries
+    to keep list items intact.
+    """
+    if width <= 0:
+        return text  # No wrapping
+
+    lines = text.split('\n')
+    wrapped_lines = []
+
+    for line in lines:
+        # Preserve empty lines and separator lines (===, ---)
+        if not line.strip() or line.strip().startswith('=') or line.strip().startswith('-') and len(set(line.strip())) == 1:
+            wrapped_lines.append(line)
+            continue
+
+        # Detect leading indentation
+        stripped = line.lstrip()
+        indent = line[:len(line) - len(stripped)]
+
+        # If line fits, keep as-is
+        if len(line) <= width:
+            wrapped_lines.append(line)
+            continue
+
+        # Check if this is a comma-separated list (has multiple commas)
+        if stripped.count(',') >= 2:
+            # Wrap at comma boundaries to keep list items intact
+            wrapped_lines.extend(_wrap_list_line(stripped, indent, width))
+        else:
+            # Standard word wrap for non-list content
+            wrapper = textwrap.TextWrapper(
+                width=width,
+                initial_indent=indent,
+                subsequent_indent=indent + "  ",
+                break_long_words=False,
+                break_on_hyphens=False
+            )
+            wrapped_lines.extend(wrapper.wrap(stripped))
+
+    return '\n'.join(wrapped_lines)
+
+
+def _wrap_list_line(content: str, indent: str, width: int) -> list:
+    """Wrap a comma-separated list, keeping items intact."""
+    # Check if line has a prefix like "Skills: " or "Ancestry: "
+    if ': ' in content:
+        prefix, rest = content.split(': ', 1)
+        prefix = prefix + ': '
+    else:
+        prefix = ''
+        rest = content
+
+    items = [item.strip() for item in rest.split(',')]
+    result_lines = []
+    current_line = indent + prefix
+
+    for i, item in enumerate(items):
+        # Add comma except for last item
+        item_with_comma = item + (',' if i < len(items) - 1 else '')
+
+        # Check if adding this item would exceed width
+        test_line = current_line + ('' if current_line.endswith(': ') or current_line == indent + prefix else ' ') + item_with_comma
+
+        if len(test_line) <= width or current_line == indent + prefix:
+            # Add to current line
+            if current_line.endswith(': ') or current_line == indent + prefix:
+                current_line += item_with_comma
+            else:
+                current_line += ' ' + item_with_comma
+        else:
+            # Start new line
+            result_lines.append(current_line)
+            current_line = indent + '  ' + item_with_comma  # Extra indent for continuation
+
+    if current_line.strip():
+        result_lines.append(current_line)
+
+    return result_lines
 
 
 def format_character_static(data: dict) -> str:
@@ -280,6 +367,170 @@ def format_character_static(data: dict) -> str:
         lines.append("LANGUAGES")
         lines.append("-" * 40)
         lines.append("  " + ", ".join(languages))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_character_condensed(data: dict) -> str:
+    """Convert Pathbuilder JSON to condensed text format.
+
+    Condensed format omits:
+    - Class features (everyone can look these up)
+    - Level numbers on feats
+    - Equipment/weapons
+
+    Just shows the key choices: ancestry, class, background, and feats by type.
+    """
+    build = data.get("build", data)
+    lines = []
+
+    # Header
+    name = build.get("name", "Unknown Character")
+    abilities = build.get("abilities", {})
+    lines.append("=" * 60)
+    lines.append(f"  {name}")
+    # Ability modifiers on one line
+    ability_mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        ability_mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+    lines.append("  " + "  ".join(ability_mods))
+    lines.append("=" * 60)
+    lines.append("")
+
+    # Basic Info (condensed)
+    char_class = build.get('class', 'Unknown')
+    level = build.get('level', '?')
+    ancestry = build.get('ancestry', 'Unknown')
+    heritage = build.get('heritage', 'Unknown')
+    background = build.get('background', 'Unknown')
+
+    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"Background: {background}")
+    if build.get("dualClass"):
+        lines.append(f"Dual Class: {build['dualClass']}")
+    lines.append("")
+
+    # Defenses (condensed)
+    attrs = build.get("attributes", {})
+    profs = build.get("proficiencies", {})
+    ac_info = build.get("acTotal", {})
+
+    # HP calculation
+    ancestry_hp = attrs.get("ancestryhp", 0)
+    class_hp = attrs.get("classhp", 0)
+    con_mod = get_modifier(abilities.get("con", 10))
+    bonus_hp = attrs.get("bonushp", 0)
+    bonus_per_level = attrs.get("bonushpPerLevel", 0)
+    total_hp = ancestry_hp + (class_hp + con_mod + bonus_per_level) * level + bonus_hp
+
+    ac = ac_info.get("acTotal", 10)
+
+    # Saves on one line
+    saves = []
+    for save, abbr in [("fortitude", "Fort"), ("reflex", "Ref"), ("will", "Will")]:
+        prof = profs.get(save, 0)
+        ability = {"fortitude": "con", "reflex": "dex", "will": "wis"}[save]
+        ability_mod = get_modifier(abilities.get(ability, 10))
+        total = prof + (level if prof > 0 else 0) + ability_mod
+        saves.append(f"{abbr} {format_modifier(total)}")
+
+    perc_prof = profs.get("perception", 0)
+    perc_mod = get_modifier(abilities.get("wis", 10))
+    perc_total = perc_prof + (level if perc_prof > 0 else 0) + perc_mod
+
+    lines.append(f"HP {total_hp}  AC {ac}  {' '.join(saves)}  Per {format_modifier(perc_total)}")
+    lines.append("")
+
+    # Skills (condensed - just trained+)
+    skill_abilities = {
+        "acrobatics": "dex", "arcana": "int", "athletics": "str",
+        "crafting": "int", "deception": "cha", "diplomacy": "cha",
+        "intimidation": "cha", "medicine": "wis", "nature": "wis",
+        "occultism": "int", "performance": "cha", "religion": "wis",
+        "society": "int", "stealth": "dex", "survival": "wis", "thievery": "dex"
+    }
+
+    trained_skills = []
+    for skill, ability in skill_abilities.items():
+        prof = profs.get(skill, 0)
+        if prof > 0:
+            ability_mod = get_modifier(abilities.get(ability, 10))
+            total = prof + level + ability_mod
+            rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(prof, "?")
+            trained_skills.append(f"{skill.capitalize()} {format_modifier(total)}({rank_abbr})")
+
+    # Lores
+    lores = build.get("lores", [])
+    int_mod = get_modifier(abilities.get("int", 10))
+    for lore in lores:
+        lore_name = lore[0] if isinstance(lore, list) else lore
+        lore_prof = lore[1] if isinstance(lore, list) and len(lore) > 1 else 2
+        total = lore_prof + level + int_mod
+        rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(lore_prof, "?")
+        trained_skills.append(f"{lore_name} Lore {format_modifier(total)}({rank_abbr})")
+
+    lines.append("Skills: " + ", ".join(sorted(trained_skills)))
+    lines.append("")
+
+    # Feats - grouped by type, with level in parens
+    feats = build.get("feats", [])
+    if feats:
+        lines.append("FEATS")
+        lines.append("-" * 40)
+
+        feat_groups = {}
+        seen_feats = {}  # Track feat names to avoid duplicates
+        for feat in feats:
+            feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_note = feat[1] if isinstance(feat, list) and len(feat) > 1 and feat[1] else None
+            feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
+            feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
+
+            # Normalize feat type names
+            if feat_type == "Heritage":
+                continue  # Skip heritage, it's shown in basic info
+
+            # Group similar types
+            if feat_type in ["Ancestry Feat"]:
+                group = "Ancestry"
+            elif feat_type in ["Class Feat"]:
+                group = "Class"
+            elif feat_type in ["Skill Feat"]:
+                group = "Skill"
+            elif feat_type in ["General Feat"]:
+                group = "General"
+            elif feat_type in ["Archetype Feat"]:
+                group = "Archetype"
+            else:
+                group = feat_type
+
+            if group not in feat_groups:
+                feat_groups[group] = []
+                seen_feats[group] = set()
+
+            # Build display with level
+            display = feat_name
+            if feat_note:
+                display += f" [{feat_note}]"
+            display += f" ({feat_level})"
+
+            if feat_name not in seen_feats[group]:  # Avoid duplicates by name
+                feat_groups[group].append(display)
+                seen_feats[group].add(feat_name)
+
+        # Output in preferred order
+        for group in ["Ancestry", "Class", "Archetype", "Skill", "General", "Awarded Feat"]:
+            if group in feat_groups:
+                lines.append(f"  {group}: {', '.join(feat_groups[group])}")
+
+        # Any remaining groups
+        for group, feat_list in feat_groups.items():
+            if group not in ["Ancestry", "Class", "Archetype", "Skill", "General", "Awarded Feat"]:
+                lines.append(f"  {group}: {', '.join(feat_list)}")
+
         lines.append("")
 
     return "\n".join(lines)
@@ -625,25 +876,31 @@ def main():
         description="Convert Pathbuilder 2e JSON exports to human-readable text.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Templates:
+  build (default)  Level-by-level progression showing choices at each level
+  static           Complete character sheet with all stats and features
+  condensed        Compact format: feats grouped by type, no levels shown
+
 Examples:
-  %(prog)s character.json              Output build format to character.txt
-  %(prog)s character.json --static     Output static sheet to character.txt
-  %(prog)s character.json -o sheet.txt Output to sheet.txt
-  %(prog)s -c                          Read JSON from clipboard, output to stdout
-  %(prog)s -c -o char.txt              Read from clipboard, output to char.txt
+  %(prog)s character.json                 Output build template to character.txt
+  %(prog)s character.json -t static       Static character sheet
+  %(prog)s character.json -t condensed    Condensed format
+  %(prog)s -c --stdout                    Read JSON from clipboard, print to stdout
 """
     )
 
     parser.add_argument("input", nargs="?", help="Input JSON file")
+    parser.add_argument("-t", "--template", choices=["build", "static", "condensed"],
+                        default="build", help="Output template (default: build)")
+    parser.add_argument("-w", "--width", type=int, default=71,
+                        help="Line width for word wrap (default: 71, 0 to disable)")
     parser.add_argument("-o", "--output", help="Output file (default: <input>.txt)")
     parser.add_argument("-c", "--clipboard", action="store_true",
                         help="Read JSON from clipboard (macOS)")
-    parser.add_argument("--static", action="store_true",
-                        help="Use static character sheet format instead of build format")
     parser.add_argument("--stdout", action="store_true",
                         help="Print to stdout instead of file")
     parser.add_argument("--no-prompt", action="store_true",
-                        help="Skip interactive skill increase prompts")
+                        help="Skip interactive skill increase prompts (build template only)")
 
     args = parser.parse_args()
 
@@ -670,11 +927,13 @@ Examples:
         with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-    # Format character
-    if args.static:
+    # Format character based on template
+    if args.template == "static":
         formatted = format_character_static(data)
+    elif args.template == "condensed":
+        formatted = format_character_condensed(data)
     else:
-        # Get skill increases interactively unless --no-prompt
+        # Build template - get skill increases interactively unless --no-prompt
         skill_increases = None
         if not args.no_prompt:
             build = data.get("build", data)
@@ -684,6 +943,9 @@ Examples:
             abilities = build.get("abilities", {})
             skill_increases = prompt_skill_increases(char_class, char_level, profs, abilities, char_level)
         formatted = format_character_build(data, skill_increases)
+
+    # Apply word wrap
+    formatted = wrap_text(formatted, args.width)
 
     # Determine output destination
     if args.stdout or (args.clipboard and not args.output):
