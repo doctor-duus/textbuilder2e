@@ -928,7 +928,67 @@ def prompt_skill_increases(char_class: str, char_level: int, profs: dict, abilit
     return skill_increases
 
 
-def format_character_build(data: dict, skill_increases: dict = None, int_skill_training: dict = None) -> str:
+def prompt_class_feature_levels(char_class: str, char_level: int, specials: list, heritage: str) -> dict:
+    """Interactively prompt user for class feature levels.
+
+    Returns:
+        dict: Maps feature name to level gained
+    """
+    # Filter out ancestry/heritage features that shouldn't be prompted
+    ancestry_features = {heritage, "Darkvision", "Low-Light Vision"}
+
+    # Filter out subclass identifiers
+    subclass_keywords = ["Racket", "Doctrine", "Muse", "Bloodline", "Order",
+                         "Methodology", "Way", "Cause", "Tactics"]
+
+    features_to_prompt = []
+    for special in specials:
+        # Skip ancestry features
+        if special in ancestry_features:
+            continue
+        # Skip subclass identifiers
+        if any(kw in special for kw in subclass_keywords):
+            continue
+        # Check if we already know the level from our mapping
+        if (char_class, special) in CLASS_FEATURE_LEVELS:
+            continue
+        if special in CLASS_FEATURE_LEVELS:
+            continue
+        if char_class == "Commander" and special in COMMANDER_TACTICS:
+            continue
+        # This feature needs a level assignment
+        features_to_prompt.append(special)
+
+    if not features_to_prompt:
+        return {}
+
+    feature_levels = {}
+
+    print(f"\n--- Class Feature Levels ---")
+    print(f"The following {char_class} features need level assignments.")
+    print(f"Enter the level (1-{char_level}) when each feature was gained, or 'skip'.")
+    print()
+
+    for feature in features_to_prompt:
+        while True:
+            choice = input(f"  {feature} (level 1-{char_level}, or 'skip'): ").strip()
+            if choice.lower() == 'skip' or choice == '':
+                feature_levels[feature] = 1  # Default to level 1
+                break
+            try:
+                lvl = int(choice)
+                if 1 <= lvl <= char_level:
+                    feature_levels[feature] = lvl
+                    break
+                else:
+                    print(f"    Level must be between 1 and {char_level}.")
+            except ValueError:
+                print(f"    Enter a number or 'skip'.")
+
+    return feature_levels
+
+
+def format_character_build(data: dict, skill_increases: dict = None, int_skill_training: dict = None, feature_levels: dict = None) -> str:
     """Convert Pathbuilder JSON to build progression format."""
     build = data.get("build", data)
     lines = []
@@ -1014,10 +1074,14 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
         # Skip ancestry/heritage features
         if special in ancestry_features or special in subclass_features:
             continue
-        feature_level = get_feature_level(char_class, special)
-        if feature_level not in features_by_level:
-            features_by_level[feature_level] = []
-        features_by_level[feature_level].append(special)
+        # Check user-provided levels first, then fall back to mapping
+        if feature_levels and special in feature_levels:
+            feat_level = feature_levels[special]
+        else:
+            feat_level = get_feature_level(char_class, special)
+        if feat_level not in features_by_level:
+            features_by_level[feat_level] = []
+        features_by_level[feat_level].append(special)
 
     # =====================
     # ANCESTRY & BACKGROUND
@@ -1335,7 +1399,7 @@ Examples:
     parser.add_argument("--stdout", action="store_true",
                         help="Print to stdout instead of file")
     parser.add_argument("--no-prompt", action="store_true",
-                        help="Skip interactive skill increase prompts (build template only)")
+                        help="Skip interactive prompts for class features and skills (build only)")
 
     args = parser.parse_args()
 
@@ -1372,18 +1436,25 @@ Examples:
     elif args.template == "condensed":
         formatted = format_character_condensed(data)
     else:
-        # Build template - get skill training/increases interactively unless --no-prompt
+        # Build template - get prompts interactively unless --no-prompt
         skill_increases = None
         int_skill_training = None
+        feature_levels = None
         if not args.no_prompt:
             build = data.get("build", data)
             char_class = build.get("class", "Unknown")
             char_level = build.get("level", 1)
             profs = build.get("proficiencies", {})
             abilities = build.get("abilities", {})
+            specials = build.get("specials", [])
+            heritage = build.get("heritage", "")
+            # Prompt for class feature levels first
+            feature_levels = prompt_class_feature_levels(
+                char_class, char_level, specials, heritage)
+            # Then skill training/increases
             skill_increases, int_skill_training = prompt_skill_training_and_increases(
                 char_class, char_level, profs, abilities)
-        formatted = format_character_build(data, skill_increases, int_skill_training)
+        formatted = format_character_build(data, skill_increases, int_skill_training, feature_levels)
 
     # Apply word wrap (skip for post formats - platforms handle their own wrapping)
     if not args.post:
