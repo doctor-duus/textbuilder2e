@@ -1,0 +1,21 @@
+**Glimpse, goblin xbowslinger (rogue) 12th**
+
+Goblin (Dokkaebi Goblin) Gunslinger 12
+
+Background: Blow-In (Deception)
+
+`STR +0 | DEX +5 | CON +4 | INT +2 | WIS +0 | CHA +5`
+
+**Ancestry:** Burn It! (1), Very Sneaky (5), Cave Climber (9)
+
+**Class:** Munitions Crafter (1), Crossbow Crack Shot (2), Running Reload (4), Advanced Trickery (6), Grit and Tenacity (8), Redirecting Shot (10), Unshakable Grit (12)
+
+**Archetype:** Rogue Dedication (2), Sneak Attacker (4), Basic Trickery (6), Advanced Trickery (8), Skill Mastery (10), Advanced Trickery (12)
+
+**Skill:** Battle Medicine (2), Confabulator (4), Fleeing Diversion (6), Godless Healing (8), Terrified Retreat (10), Battle Cry (10), Foil Senses (12)
+
+**General:** Fleet (3), Toughness (7), Incredible Investiture (11)
+
+**Awarded Feat:** Lengthy Diversion (1), Alchemical Crafting (1)
+
+**Rogue Feat:** Nimble Dodge (6), You're Next (6), Dread Striker (8), Light Step (12)
