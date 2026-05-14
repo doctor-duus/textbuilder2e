@@ -546,44 +546,116 @@ def get_skill_increase_levels(char_class: str, char_level: int) -> list:
         return [lvl for lvl in [3, 5, 7, 9, 11, 13, 15, 17, 19] if lvl <= char_level]
 
 
-def prompt_skill_increases(char_class: str, char_level: int, profs: dict, abilities: dict, level: int) -> dict:
-    """Interactively prompt user for skill increase choices at each level."""
-    skill_abilities = {
-        "acrobatics": "dex", "arcana": "int", "athletics": "str",
-        "crafting": "int", "deception": "cha", "diplomacy": "cha",
-        "intimidation": "cha", "medicine": "wis", "nature": "wis",
-        "occultism": "int", "performance": "cha", "religion": "wis",
-        "society": "int", "stealth": "dex", "survival": "wis", "thievery": "dex"
-    }
+def get_int_skill_training_levels(abilities: dict, char_level: int) -> list:
+    """Return list of levels where INT modifier increases, granting new trained skills.
+
+    When a character's INT modifier increases, they gain a new trained skill.
+    This typically happens when INT goes from odd to even (e.g., 11->12, 13->14).
+    """
+    breakdown = abilities.get("breakdown", {})
+    boosts = breakdown.get("mapLevelledBoosts", {})
+
+    # Calculate starting INT from ancestry/background/class boosts at level 1
+    int_score = 10
+    for boost_list in [breakdown.get("ancestryBoosts", []),
+                       breakdown.get("ancestryFree", []),
+                       breakdown.get("backgroundBoosts", []),
+                       breakdown.get("classBoosts", [])]:
+        if "Int" in boost_list:
+            int_score += 2
+
+    # Also check level 1 boosts
+    if "1" in boosts and "Int" in boosts["1"]:
+        int_score += 2
+
+    # Track levels where INT modifier increases
+    int_training_levels = []
+    prev_mod = (int_score - 10) // 2
+
+    for lvl in range(2, char_level + 1):
+        lvl_str = str(lvl)
+        if lvl_str in boosts and "Int" in boosts[lvl_str]:
+            int_score += 2
+            new_mod = (int_score - 10) // 2
+            if new_mod > prev_mod:
+                int_training_levels.append(lvl)
+                prev_mod = new_mod
+
+    return int_training_levels
+
+
+def prompt_skill_training_and_increases(char_class: str, char_level: int, profs: dict, abilities: dict) -> tuple:
+    """Interactively prompt user for skill increases and INT-based skill training.
+
+    Returns:
+        tuple: (skill_increases dict, int_skill_training dict)
+    """
+    skill_list = [
+        "acrobatics", "arcana", "athletics", "crafting", "deception", "diplomacy",
+        "intimidation", "medicine", "nature", "occultism", "performance", "religion",
+        "society", "stealth", "survival", "thievery"
+    ]
 
     skill_increase_levels = get_skill_increase_levels(char_class, char_level)
+    int_training_levels = get_int_skill_training_levels(abilities, char_level)
+
     skill_increases = {}
+    int_skill_training = {}
 
     # Get trained skills (eligible for increases)
-    trained_skills = [s.capitalize() for s, p in profs.items() if s in skill_abilities and p >= 2]
+    trained_skills = [s.capitalize() for s in skill_list if profs.get(s, 0) >= 2]
+    # Get all skills for INT training selection
+    all_skills = [s.capitalize() for s in skill_list]
 
-    print(f"\n--- Skill Increase Selection ---")
-    print(f"Trained skills: {', '.join(sorted(trained_skills))}")
-    print()
+    # Prompt for INT-based skill training first
+    if int_training_levels:
+        print(f"\n--- INT-Based Skill Training ---")
+        print(f"Your INT modifier increased at these levels, granting new trained skills.")
+        print(f"All skills: {', '.join(sorted(all_skills))}")
+        print()
 
-    for lvl in skill_increase_levels:
-        while True:
-            choice = input(f"Level {lvl} skill increase (or 'skip' to leave blank): ").strip()
-            if choice.lower() == 'skip' or choice == '':
-                skill_increases[lvl] = None
-                break
-            # Normalize the input
-            choice_normalized = choice.capitalize()
-            if choice_normalized in trained_skills:
-                skill_increases[lvl] = choice_normalized
-                break
-            else:
-                print(f"  '{choice}' not found in trained skills. Try again.")
+        for lvl in int_training_levels:
+            while True:
+                choice = input(f"Level {lvl} new trained skill from INT (or 'skip'): ").strip()
+                if choice.lower() == 'skip' or choice == '':
+                    int_skill_training[lvl] = None
+                    break
+                choice_normalized = choice.capitalize()
+                if choice_normalized in all_skills:
+                    int_skill_training[lvl] = choice_normalized
+                    break
+                else:
+                    print(f"  '{choice}' not a valid skill. Try again.")
 
+    # Prompt for skill increases
+    if skill_increase_levels:
+        print(f"\n--- Skill Increase Selection ---")
+        print(f"Trained skills: {', '.join(sorted(trained_skills))}")
+        print()
+
+        for lvl in skill_increase_levels:
+            while True:
+                choice = input(f"Level {lvl} skill increase (or 'skip'): ").strip()
+                if choice.lower() == 'skip' or choice == '':
+                    skill_increases[lvl] = None
+                    break
+                choice_normalized = choice.capitalize()
+                if choice_normalized in trained_skills:
+                    skill_increases[lvl] = choice_normalized
+                    break
+                else:
+                    print(f"  '{choice}' not found in trained skills. Try again.")
+
+    return skill_increases, int_skill_training
+
+
+def prompt_skill_increases(char_class: str, char_level: int, profs: dict, abilities: dict, level: int) -> dict:
+    """Legacy function - redirects to combined prompt."""
+    skill_increases, _ = prompt_skill_training_and_increases(char_class, char_level, profs, abilities)
     return skill_increases
 
 
-def format_character_build(data: dict, skill_increases: dict = None) -> str:
+def format_character_build(data: dict, skill_increases: dict = None, int_skill_training: dict = None) -> str:
     """Convert Pathbuilder JSON to build progression format."""
     build = data.get("build", data)
     lines = []
@@ -803,6 +875,7 @@ def format_character_build(data: dict, skill_increases: dict = None) -> str:
     lines.append("=" * 40)
 
     skill_increase_levels = get_skill_increase_levels(char_class, char_level)
+    int_training_levels = get_int_skill_training_levels(abilities, char_level)
 
     for lvl in range(1, char_level + 1):
         lines.append("")
@@ -816,6 +889,13 @@ def format_character_build(data: dict, skill_increases: dict = None) -> str:
         if lvl_str in levelled_boosts and levelled_boosts[lvl_str]:
             boosts = levelled_boosts[lvl_str]
             level_content.append(f"  Ability Boosts: {', '.join(boosts)}")
+
+        # INT-based skill training (when INT modifier increases)
+        if lvl in int_training_levels:
+            if int_skill_training and lvl in int_skill_training and int_skill_training[lvl]:
+                level_content.append(f"  Skill Training (INT): {int_skill_training[lvl]}")
+            else:
+                level_content.append("  Skill Training (INT): ___")
 
         # Feats at this level
         if lvl in feats_by_level:
@@ -933,16 +1013,18 @@ Examples:
     elif args.template == "condensed":
         formatted = format_character_condensed(data)
     else:
-        # Build template - get skill increases interactively unless --no-prompt
+        # Build template - get skill training/increases interactively unless --no-prompt
         skill_increases = None
+        int_skill_training = None
         if not args.no_prompt:
             build = data.get("build", data)
             char_class = build.get("class", "Unknown")
             char_level = build.get("level", 1)
             profs = build.get("proficiencies", {})
             abilities = build.get("abilities", {})
-            skill_increases = prompt_skill_increases(char_class, char_level, profs, abilities, char_level)
-        formatted = format_character_build(data, skill_increases)
+            skill_increases, int_skill_training = prompt_skill_training_and_increases(
+                char_class, char_level, profs, abilities)
+        formatted = format_character_build(data, skill_increases, int_skill_training)
 
     # Apply word wrap
     formatted = wrap_text(formatted, args.width)

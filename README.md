@@ -84,10 +84,26 @@ Compact format for sharing: just the key choices with feats grouped by type (Anc
 | Flag | Description |
 |------|-------------|
 | `-t`, `--template` | Output template: `build`, `static`, or `condensed` |
+| `-w`, `--width` | Line width for word wrap (default: 71, 0 to disable) |
 | `-o`, `--output` | Output file (default: `<input>.txt`) |
 | `-c`, `--clipboard` | Read JSON from clipboard (macOS) |
 | `--stdout` | Print to stdout instead of file |
 | `--no-prompt` | Skip interactive skill increase prompts (build only) |
+
+## Known Issues
+
+### 1. ~~INT-based skill training not tracked~~ (Fixed)
+
+When a character's INT modifier increases, they gain a new trained skill. The build template now detects this and prompts for the skill selection.
+
+### 2. Some class features may be missing
+
+For certain classes (e.g., Commander), higher-level class feature choices (like Expert Tactician at level 7) may not be recorded, while level 1 choices (like Tactics) are shown.
+
+**To fix:**
+- Investigate how Pathbuilder stores class feature choices in the JSON
+- Check if choices are in `specials`, `feats`, or another field
+- Ensure all selectable class features are extracted and displayed
 
 ## Requirements
 

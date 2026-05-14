@@ -85,6 +85,7 @@ LEVEL 3
 LEVEL 4
 --------------------
   Ability Boosts: Int
+  Skill Training (INT): ___
   Skill: Confabulator
   Class: Running Reload
   Archetype: Sneak Attacker
@@ -120,6 +121,7 @@ LEVEL 8
 LEVEL 9
 --------------------
   Ability Boosts: Int
+  Skill Training (INT): ___
   Ancestry: Cave Climber
   Skill Increase: ___
 
