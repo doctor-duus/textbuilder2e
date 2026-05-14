@@ -536,6 +536,109 @@ def format_character_condensed(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_post_reddit(data: dict) -> str:
+    """Format character for Reddit post (markdown)."""
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    level = build.get("level", "?")
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"**{name}**")
+    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"Background: {background}")
+    lines.append(f"`{' | '.join(mods)}`")
+    lines.append("")
+
+    # Feats grouped by type
+    feats = build.get("feats", [])
+    if feats:
+        feat_groups = {}
+        for feat in feats:
+            feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
+            feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
+
+            if feat_type == "Heritage":
+                continue
+
+            if feat_type in ["Ancestry Feat"]:
+                group = "Ancestry"
+            elif feat_type in ["Class Feat"]:
+                group = "Class"
+            elif feat_type in ["Skill Feat"]:
+                group = "Skill"
+            elif feat_type in ["General Feat"]:
+                group = "General"
+            elif feat_type in ["Archetype Feat"]:
+                group = "Archetype"
+            else:
+                group = feat_type
+
+            if group not in feat_groups:
+                feat_groups[group] = []
+            feat_groups[group].append(f"{feat_name} ({feat_level})")
+
+        for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+            if group in feat_groups:
+                lines.append(f"**{group}:** {', '.join(feat_groups[group])}")
+
+        for group, feat_list in feat_groups.items():
+            if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+                lines.append(f"**{group}:** {', '.join(feat_list)}")
+
+    return "\n".join(lines)
+
+
+def format_post_bluesky(data: dict) -> str:
+    """Format character for Bluesky post (compact, ~300 char limit)."""
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    level = build.get("level", "?")
+    ancestry = build.get("ancestry", "Unknown")
+
+    # Compact ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr[0].upper()}{format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"{name}")
+    lines.append(f"{ancestry} {char_class} {level}")
+    lines.append(" ".join(mods))
+
+    # Just list key feats compactly
+    feats = build.get("feats", [])
+    class_feats = []
+    for feat in feats:
+        feat_name = feat[0] if isinstance(feat, list) else feat
+        feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else ""
+        if feat_type == "Class Feat":
+            class_feats.append(feat_name)
+
+    if class_feats:
+        lines.append(f"Class: {', '.join(class_feats[:5])}")  # Limit to 5
+
+    return "\n".join(lines)
+
+
 def get_skill_increase_levels(char_class: str, char_level: int) -> list:
     """Return list of levels where this class gets skill increases."""
     if char_class == "Rogue":
@@ -972,6 +1075,8 @@ Examples:
     parser.add_argument("input", nargs="?", help="Input JSON file")
     parser.add_argument("-t", "--template", choices=["build", "static", "condensed"],
                         default="build", help="Output template (default: build)")
+    parser.add_argument("-p", "--post", choices=["reddit", "bluesky"],
+                        help="Format for social media post (overrides --template)")
     parser.add_argument("-w", "--width", type=int, default=71,
                         help="Line width for word wrap (default: 71, 0 to disable)")
     parser.add_argument("-o", "--output", help="Output file (default: <input>.txt)")
@@ -1007,8 +1112,12 @@ Examples:
         with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-    # Format character based on template
-    if args.template == "static":
+    # Format character based on post format or template
+    if args.post == "reddit":
+        formatted = format_post_reddit(data)
+    elif args.post == "bluesky":
+        formatted = format_post_bluesky(data)
+    elif args.template == "static":
         formatted = format_character_static(data)
     elif args.template == "condensed":
         formatted = format_character_condensed(data)
