@@ -1,0 +1,26 @@
+============================================================
+  Captain Gill Goldtooth
+  STR +0  DEX +4  CON +2  INT +4  WIS -1  CHA +3
+============================================================
+
+Goblin (Unbreakable Goblin) Commander 7
+Background: Banished Clockwork Priest
+
+HP 80  AC 24  Fort +11 Ref +15 Will +10  Per +10
+
+Skills: Acrobatics +13(T), Arcana +13(T), Crafting +15(E),
+  Deception +12(T), Diplomacy +12(T), Intimidation +12(T),
+  Occultism +13(T), Religion +8(T), Society +17(M),
+  Specific Deity Lore +13(T), Thievery +13(T), Warfare Lore +17(M)
+
+FEATS
+----------------------------------------
+  Ancestry: Bouncy Goblin (1), Vandal (5)
+  Class: Commander's Companion (1), Guiding Shot (2),
+    Impressive Mount (4), Efficient Preparation (6)
+  Archetype: Cavalier Dedication (2), Cavalier's Charge (4),
+    Firebrand Braggart Dedication (6)
+  Skill: Eyes of the City (2), Encouraging Words (4),
+    Battle Planner (6)
+  General: Steel Your Resolve (3), Biographical Eye (7)
+  Awarded Feat: Shield Block (1), Quick Identification (1)

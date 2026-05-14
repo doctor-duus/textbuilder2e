@@ -1,0 +1,121 @@
+============================================================
+  Zona Gnome Pheonix Sorc (Psyc)
+  STR -1  DEX +3  CON +2  INT +1  WIS +0  CHA +4
+============================================================
+
+BASIC INFORMATION
+----------------------------------------
+Class:      Sorcerer 3
+Ancestry:   Gnome
+Heritage:   Fey-Touched Gnome
+Background: Demon Hunted
+Size:       Small
+Deity:      Sarenrae 
+
+DEFENSES
+----------------------------------------
+HP: 32
+AC: 18 (20 with shield)
+
+Saving Throws:
+  Fort: +7 (Trained)
+  Ref: +8 (Trained)
+  Will: +7 (Expert)
+
+Perception: +5 (Trained)
+Speed: 25 ft
+
+SKILLS
+----------------------------------------
+  Acrobatics: +8 (Trained)
+  Athletics: +4 (Trained)
+  Deception: +9 (Trained)
+  Diplomacy: +9 (Trained)
+  Intimidation: +11 (Expert)
+  Nature: +5 (Trained)
+  Occultism: +6 (Trained)
+
+Lore Skills:
+  Warfare Lore: +6 (Trained)
+
+CLASS FEATURES
+----------------------------------------
+  - Bloodline: Phoenix
+  - Sorcerous Potency
+  - Blood Magic
+  - Low-Light Vision
+  - Charisma
+  - The Infinite Eye
+  - Standard Cantrip: Guidance (Archetype)
+  - Signature Spells
+  - Fey-Touched Gnome
+
+SPELLS
+----------------------------------------
+  Sorcerer (Primal, Spontaneous)
+    Cantrips: Eat Fire, Electric Arc, Frostbite, Scatter Scree,
+      Detect Magic
+    Level 1 (4/day): Heal, Grease, Briny Bolt, Burning Hands
+    Level 2 (3/day): Enlarge, Sudden Bolt, See Invisibility
+
+  Fey Touched Gnome (Primal, Innate)
+    Cantrips: Rousing Splash
+
+  First World Magic (Primal, Innate)
+    Cantrips: Ignition
+
+FEATS
+----------------------------------------
+  Heritages:
+    Lvl 1: Fey-Touched Gnome
+  Ancestry Feats:
+    Lvl 1: First World Magic
+    Lvl 3: Animal Accomplice
+  Class Feats:
+    Lvl 2: Reach Spell
+  Archetype Feats:
+    Lvl 2: Psychic Dedication
+  Skill Feats:
+    Lvl 2: Bon Mot
+  General Feats:
+    Lvl 3: Ancestral Paragon
+  Awarded Feats:
+    Lvl 1: Intimidating Glare
+
+WEAPONS
+----------------------------------------
+  Dagger
+    Attack: +8, Damage: 1d4-1 P
+
+ARMOR & SHIELDS
+----------------------------------------
+  Explorer's Clothing (worn)
+  Wooden Shield (worn)
+
+EQUIPMENT
+----------------------------------------
+  - Shield Sconce (Invested)
+  - Clothing (Explorer's) (Invested)
+  - Backpack (Invested)
+  - Bedroll (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Chalk x10 (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Flint and Steel (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Rope (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Rations x3 (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Torch x8 (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Waterskin (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Soap (87A193DC-A41F-4012-9FC5-2372180B704C)
+  - Writing Set (Invested)
+
+MONEY
+----------------------------------------
+  15 gp
+
+FAMILIARS
+----------------------------------------
+  Familiar
+    Abilities: Familiar Focus, Cantrip Connection
+
+LANGUAGES
+----------------------------------------
+  Aklo, Common, Fey, Gnomish

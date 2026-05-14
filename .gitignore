@@ -5,3 +5,6 @@ __pycache__/
 # Sample/test files in root (keep examples/)
 /*.json
 /*.txt
+
+# Local examples (personal characters)
+local-examples/

@@ -1,0 +1,111 @@
+============================================================
+  Captain Gill Goldtooth
+  STR +0  DEX +4  CON +2  INT +4  WIS -1  CHA +3
+============================================================
+
+BASIC INFORMATION
+----------------------------------------
+Class:      Commander 7
+Ancestry:   Goblin
+Heritage:   Unbreakable Goblin
+Background: Banished Clockwork Priest
+Size:       Small
+
+DEFENSES
+----------------------------------------
+HP: 80
+AC: 24
+
+Saving Throws:
+  Fort: +11 (Trained)
+  Ref: +15 (Expert)
+  Will: +10 (Expert)
+
+Perception: +10 (Expert)
+Speed: 25 ft
+
+SKILLS
+----------------------------------------
+  Acrobatics: +13 (Trained)
+  Arcana: +13 (Trained)
+  Crafting: +15 (Expert)
+  Deception: +12 (Trained)
+  Diplomacy: +12 (Trained)
+  Intimidation: +12 (Trained)
+  Occultism: +13 (Trained)
+  Religion: +8 (Trained)
+  Society: +17 (Master)
+  Thievery: +13 (Trained)
+
+Lore Skills:
+  Warfare Lore: +17 (Master)
+  Specific Deity Lore: +13 (Trained)
+
+CLASS FEATURES
+----------------------------------------
+  - Commander's Banner
+  - Gather to Me!
+  - Reload!
+  - Defensive Retreat
+  - Strike Hard!
+  - Protective Screen
+  - Drilled Reactions
+  - Darkvision
+  - Warfare Expertise
+  - Military Expertise
+  - Mountaineering Training
+  - Alley-Oop
+  - Weapon Specialization
+  - Unbreakable Goblin
+
+FEATS
+----------------------------------------
+  Heritages:
+    Lvl 1: Unbreakable Goblin
+  Ancestry Feats:
+    Lvl 1: Bouncy Goblin
+    Lvl 5: Vandal
+  Class Feats:
+    Lvl 1: Commander's Companion
+    Lvl 2: Guiding Shot
+    Lvl 4: Impressive Mount
+    Lvl 6: Efficient Preparation
+  Archetype Feats:
+    Lvl 2: Cavalier Dedication
+    Lvl 4: Cavalier's Charge
+    Lvl 6: Firebrand Braggart Dedication
+  Skill Feats:
+    Lvl 2: Eyes of the City
+    Lvl 4: Encouraging Words
+    Lvl 6: Battle Planner
+  General Feats:
+    Lvl 3: Steel Your Resolve
+    Lvl 7: Biographical Eye
+  Awarded Feats:
+    Lvl 1: Shield Block
+    Lvl 1: Quick Identification
+
+WEAPONS
+----------------------------------------
+  +1 Striking Jezail
+    Attack: +16, Damage: 2d8+2 P
+
+ARMOR & SHIELDS
+----------------------------------------
+  Leather (worn)
+
+EQUIPMENT
+----------------------------------------
+  - Glasses of Sociability (Invested)
+  - Bottled Lightning (Moderate) (Invested)
+  - Black Powder (Horn) x2 (Invested)
+  - Glue Bomb (Moderate) x2 (Invested)
+  - Flare Beacon (Moderate) (Invested)
+
+MONEY
+----------------------------------------
+  180 gp
+
+ANIMAL COMPANIONS
+----------------------------------------
+  Mature Durian Crab (Durian Crab) [Mature]

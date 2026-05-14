@@ -1,0 +1,106 @@
+============================================================
+  Zona Gnome Pheonix Sorc (Psyc)
+  STR -1  DEX +3  CON +2  INT +1  WIS +0  CHA +4
+  CHARACTER BUILD PROGRESSION
+============================================================
+
+ANCESTRY & BACKGROUND
+----------------------------------------
+Ancestry: Gnome
+Heritage: Fey-Touched Gnome
+  Ancestry Boosts: Con, Cha
+  Free Boost: Dex
+  Ancestry Flaw: Str
+
+Background: Demon Hunted
+  Background Boosts: Cha, Dex
+  Lore: Warfare
+
+CLASS
+----------------------------------------
+Class: Sorcerer
+  Key Ability: CHA
+  Class Boost: Cha
+  Subclass: Bloodline: Phoenix
+
+DEFENSE
+----------------------------------------
+HP: 32
+AC: 18 (20 with shield)
+
+Saving Throws:
+  Fort: +7 (Trained)
+  Ref: +8 (Trained)
+  Will: +7 (Expert)
+
+Perception: +5 (Trained)
+Speed: 25 ft
+
+OFFENSE
+----------------------------------------
+  Dagger: +8 / 1d4-1 P
+
+SKILLS
+----------------------------------------
+  Acrobatics: +8 (Trained)
+  Athletics: +4 (Trained)
+  Deception: +9 (Trained)
+  Diplomacy: +9 (Trained)
+  Intimidation: +11 (Expert)
+  Nature: +5 (Trained)
+  Occultism: +6 (Trained)
+
+Lore Skills:
+  Warfare Lore: +6 (Trained)
+
+SPELLS
+----------------------------------------
+  Sorcerer (Primal, Spontaneous)
+    Cantrips: Eat Fire, Electric Arc, Frostbite, Scatter Scree,
+      Detect Magic
+    Level 1 (4/day): Heal, Grease, Briny Bolt, Burning Hands
+    Level 2 (3/day): Enlarge, Sudden Bolt, See Invisibility
+
+  Fey Touched Gnome (Primal, Innate)
+    Cantrips: Rousing Splash
+
+  First World Magic (Primal, Innate)
+    Cantrips: Ignition
+
+FOCUS SPELLS
+----------------------------------------
+  Focus Points: 1
+  Focus Spells (Primal): Rejuvenating Flames
+  Focus Cantrips (Occult): Guidance (Archetype)
+
+FAMILIARS
+----------------------------------------
+  Familiar
+    Abilities: Familiar Focus, Cantrip Connection
+
+LEVEL PROGRESSION
+========================================
+
+LEVEL 1
+--------------------
+  Ability Boosts: Dex, Con, Cha, Int
+  Intimidating Glare*
+  Heritage: Fey-Touched Gnome
+  Ancestry: First World Magic
+  Class Features: Sorcerous Potency, Blood Magic, Charisma,
+    The Infinite Eye, Standard Cantrip: Guidance (Archetype),
+    Signature Spells
+
+LEVEL 2
+--------------------
+  Skill: Bon Mot
+  Class: Reach Spell
+  Archetype: Psychic Dedication
+
+LEVEL 3
+--------------------
+  General: Ancestral Paragon
+  Ancestry: Animal Accomplice
+  Skill Increase: ___
+
+* = Granted by ancestry, heritage, or background

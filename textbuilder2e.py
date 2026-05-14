@@ -29,6 +29,64 @@ from pathlib import Path
 #   Menu -> Export Character -> Export to Foundry VTT (JSON)
 
 
+# Class feature level mappings
+# Maps (class, feature_name) or just feature_name to the level it's gained
+CLASS_FEATURE_LEVELS = {
+    # Commander class features
+    ("Commander", "Tactics"): 1,
+    ("Commander", "Commander's Banner"): 1,
+    ("Commander", "Warfare Expertise"): 1,
+    ("Commander", "Military Expertise"): 1,
+    ("Commander", "Drilled Reactions"): 3,
+    ("Commander", "Weapon Expertise"): 5,
+    ("Commander", "Expert Tactician"): 7,
+    ("Commander", "Weapon Specialization"): 7,
+    ("Commander", "Strategic Expertise"): 9,
+    ("Commander", "Greater Weapon Specialization"): 15,
+    ("Commander", "Tactical Mastery"): 17,
+    ("Commander", "Legendary Tactician"): 19,
+
+    # Generic features shared across classes
+    "Weapon Specialization": 7,
+    "Greater Weapon Specialization": 15,
+    "Resolve": 9,
+    "Evasion": 7,
+    "Vigilant Senses": 7,
+    "Weapon Expertise": 5,
+    "Armor Expertise": 11,
+    "Light Armor Expertise": 13,
+    "Weapon Mastery": 13,
+}
+
+# Tactics (Commander) - all gained at level 1
+COMMANDER_TACTICS = {
+    "Gather to Me!", "Reload!", "Defensive Retreat", "Strike Hard!",
+    "Bolster Defenses", "Lead the Charge", "Pin Down", "Pincer Attack",
+    "Protective Screen", "Alley-Oop", "Coordinated Assault",
+}
+
+
+def get_feature_level(char_class: str, feature_name: str) -> int:
+    """Get the level a class feature is gained at.
+
+    Returns the level or 1 if unknown (defaults to showing at level 1).
+    """
+    # Check class-specific mapping first
+    if (char_class, feature_name) in CLASS_FEATURE_LEVELS:
+        return CLASS_FEATURE_LEVELS[(char_class, feature_name)]
+
+    # Check Commander tactics (all level 1)
+    if char_class == "Commander" and feature_name in COMMANDER_TACTICS:
+        return 1
+
+    # Check generic mappings
+    if feature_name in CLASS_FEATURE_LEVELS:
+        return CLASS_FEATURE_LEVELS[feature_name]
+
+    # Default to level 1
+    return 1
+
+
 def get_modifier(score: int) -> int:
     """Calculate ability modifier from ability score."""
     return (score - 10) // 2
@@ -43,6 +101,72 @@ def proficiency_rank(level: int) -> str:
     """Convert proficiency number to rank name."""
     ranks = {0: "Untrained", 2: "Trained", 4: "Expert", 6: "Master", 8: "Legendary"}
     return ranks.get(level, f"Unknown ({level})")
+
+
+def format_spells_section(spell_casters: list) -> list:
+    """Format spellcasting section for character sheet.
+
+    Returns list of lines to add to output.
+    """
+    if not spell_casters:
+        return []
+
+    # Filter out empty spellcasters (no spells known)
+    active_casters = []
+    for caster in spell_casters:
+        spells = caster.get("spells", [])
+        has_spells = any(s.get("list", []) for s in spells)
+        if has_spells:
+            active_casters.append(caster)
+
+    if not active_casters:
+        return []
+
+    lines = []
+    lines.append("SPELLS")
+    lines.append("-" * 40)
+
+    for caster in active_casters:
+        name = caster.get("name", "Unknown")
+        tradition = caster.get("magicTradition", "").capitalize()
+        cast_type = caster.get("spellcastingType", "").capitalize()
+        innate = caster.get("innate", False)
+        per_day = caster.get("perDay", [])
+
+        # Header for this spellcaster
+        caster_info = f"{name}"
+        if tradition:
+            caster_info += f" ({tradition}"
+            if cast_type and not innate:
+                caster_info += f", {cast_type}"
+            if innate:
+                caster_info += ", Innate"
+            caster_info += ")"
+        lines.append(f"  {caster_info}")
+
+        # Spells by level
+        spells = caster.get("spells", [])
+        for spell_entry in spells:
+            spell_level = spell_entry.get("spellLevel", 0)
+            spell_list = spell_entry.get("list", [])
+            if not spell_list:
+                continue
+
+            # Get slots for this level
+            slots = per_day[spell_level] if spell_level < len(per_day) else 0
+
+            if spell_level == 0:
+                level_label = "Cantrips"
+            else:
+                level_label = f"Level {spell_level}"
+                if slots > 0 and not innate:
+                    level_label += f" ({slots}/day)"
+
+            lines.append(f"    {level_label}: {', '.join(spell_list)}")
+
+        lines.append("")
+
+    return lines
 
 
 def wrap_text(text: str, width: int = 71) -> str:
@@ -252,6 +376,12 @@ def format_character_static(data: dict) -> str:
             lines.append(f"  - {special}")
         lines.append("")
 
+    # Spells
+    spell_casters = build.get("spellCasters", [])
+    spell_lines = format_spells_section(spell_casters)
+    if spell_lines:
+        lines.extend(spell_lines)
+
     # Feats
     feats = build.get("feats", [])
     if feats:
@@ -359,6 +489,46 @@ def format_character_static(data: dict) -> str:
             if money.get(coin, 0) > 0:
                 coins.append(f"{money[coin]} {abbr}")
         lines.append("  " + ", ".join(coins) if coins else "  None")
+        lines.append("")
+
+    # Animal Companions / Pets
+    pets = build.get("pets", [])
+    if pets:
+        lines.append("ANIMAL COMPANIONS")
+        lines.append("-" * 40)
+        for pet in pets:
+            name = pet.get("name", "Unknown")
+            animal = pet.get("animal", "")
+            pet_type = pet.get("type", "")
+            mature = pet.get("mature", False)
+            incredible = pet.get("incredible", False)
+            specializations = pet.get("specializations", [])
+
+            display = name
+            if animal and animal != name:
+                display += f" ({animal})"
+            if mature:
+                display += " [Mature]"
+            if incredible:
+                inc_type = pet.get("incredibleType", "")
+                display += f" [Incredible - {inc_type}]" if inc_type else " [Incredible]"
+
+            lines.append(f"  {display}")
+            if specializations:
+                lines.append(f"    Specializations: {', '.join(specializations)}")
+        lines.append("")
+
+    # Familiars
+    familiars = build.get("familiars", [])
+    if familiars:
+        lines.append("FAMILIARS")
+        lines.append("-" * 40)
+        for familiar in familiars:
+            name = familiar.get("name", "Unknown")
+            abilities = familiar.get("abilities", [])
+            lines.append(f"  {name}")
+            if abilities:
+                lines.append(f"    Abilities: {', '.join(abilities)}")
         lines.append("")
 
     # Languages
@@ -833,7 +1003,21 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
     specials = build.get("specials", [])
     subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
                          "Muse" in s or "Bloodline" in s or "Order" in s or
-                         "Methodology" in s or "Way" in s or "Cause" in s]
+                         "Methodology" in s or "Way" in s or "Cause" in s or
+                         "Tactics" in s]
+
+    # Group class features by level
+    features_by_level = {}
+    heritage_name = build.get("heritage", "")
+    ancestry_features = {heritage_name, "Darkvision", "Low-Light Vision"}
+    for special in specials:
+        # Skip ancestry/heritage features
+        if special in ancestry_features or special in subclass_features:
+            continue
+        feature_level = get_feature_level(char_class, special)
+        if feature_level not in features_by_level:
+            features_by_level[feature_level] = []
+        features_by_level[feature_level].append(special)
 
     # =====================
     # ANCESTRY & BACKGROUND
@@ -972,6 +1156,72 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
     lines.append("")
 
     # =====================
+    # SPELLS (for spellcasters)
+    # =====================
+    spell_casters = build.get("spellCasters", [])
+    spell_lines = format_spells_section(spell_casters)
+    if spell_lines:
+        lines.extend(spell_lines)
+
+    # Focus spells
+    focus = build.get("focus", {})
+    focus_points = build.get("focusPoints", 0)
+    if focus and focus_points > 0:
+        lines.append("FOCUS SPELLS")
+        lines.append("-" * 40)
+        lines.append(f"  Focus Points: {focus_points}")
+        for tradition, abilities_dict in focus.items():
+            for ability, details in abilities_dict.items():
+                cantrips = details.get("focusCantrips", [])
+                spells = details.get("focusSpells", [])
+                if cantrips:
+                    lines.append(f"  Focus Cantrips ({tradition.capitalize()}): {', '.join(cantrips)}")
+                if spells:
+                    lines.append(f"  Focus Spells ({tradition.capitalize()}): {', '.join(spells)}")
+        lines.append("")
+
+    # =====================
+    # COMPANIONS & FAMILIARS
+    # =====================
+    pets = build.get("pets", [])
+    familiars = build.get("familiars", [])
+
+    if pets:
+        lines.append("ANIMAL COMPANIONS")
+        lines.append("-" * 40)
+        for pet in pets:
+            name = pet.get("name", "Unknown")
+            animal = pet.get("animal", "")
+            mature = pet.get("mature", False)
+            incredible = pet.get("incredible", False)
+
+            display = name
+            if animal and animal != name:
+                display += f" ({animal})"
+            if mature:
+                display += " [Mature]"
+            if incredible:
+                inc_type = pet.get("incredibleType", "")
+                display += f" [Incredible - {inc_type}]" if inc_type else " [Incredible]"
+
+            lines.append(f"  {display}")
+            specializations = pet.get("specializations", [])
+            if specializations:
+                lines.append(f"    Specializations: {', '.join(specializations)}")
+        lines.append("")
+
+    if familiars:
+        lines.append("FAMILIARS")
+        lines.append("-" * 40)
+        for familiar in familiars:
+            name = familiar.get("name", "Unknown")
+            fam_abilities = familiar.get("abilities", [])
+            lines.append(f"  {name}")
+            if fam_abilities:
+                lines.append(f"    Abilities: {', '.join(fam_abilities)}")
+        lines.append("")
+
+    # =====================
     # LEVEL BY LEVEL
     # =====================
     lines.append("LEVEL PROGRESSION")
@@ -1011,11 +1261,11 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
                     type_display = feat_type.replace(" Feat", "")
                     level_content.append(f"  {type_display}: {feat_name}")
 
-        # Class features at specific levels
-        if lvl == 1:
-            core_features = [s for s in specials if s not in subclass_features]
-            if core_features:
-                level_content.append(f"  Class Features: {', '.join(core_features[:3])}")
+        # Class features at this level
+        if lvl in features_by_level:
+            level_features = features_by_level[lvl]
+            if level_features:
+                level_content.append(f"  Class Features: {', '.join(level_features)}")
 
         # Skill increases
         if lvl in skill_increase_levels:

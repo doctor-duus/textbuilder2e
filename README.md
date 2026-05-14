@@ -109,14 +109,9 @@ For sharing builds on social media:
 
 When a character's INT modifier increases, they gain a new trained skill. The build template now detects this and prompts for the skill selection.
 
-### 2. Some class features may be missing
+### 2. ~~Class features all shown at level 1~~ (Partially Fixed)
 
-For certain classes (e.g., Commander), higher-level class feature choices (like Expert Tactician at level 7) may not be recorded, while level 1 choices (like Tactics) are shown.
-
-**To fix:**
-- Investigate how Pathbuilder stores class feature choices in the JSON
-- Check if choices are in `specials`, `feats`, or another field
-- Ensure all selectable class features are extracted and displayed
+Class features now display at their correct levels for Commander and common features (Weapon Specialization, Drilled Reactions, etc.). The `CLASS_FEATURE_LEVELS` mapping in the code can be extended for other classes.
 
 ## Requirements
 

@@ -1,0 +1,117 @@
+============================================================
+  Captain Gill Goldtooth
+  STR +0  DEX +4  CON +2  INT +4  WIS -1  CHA +3
+  CHARACTER BUILD PROGRESSION
+============================================================
+
+ANCESTRY & BACKGROUND
+----------------------------------------
+Ancestry: Goblin
+Heritage: Unbreakable Goblin
+  Ancestry Boosts: Dex, Cha
+  Free Boost: Int
+  Ancestry Flaw: Wis
+
+Background: Banished Clockwork Priest
+  Background Boosts: Int, Dex
+  Lore: Warfare
+  Lore: Specific Deity
+
+CLASS
+----------------------------------------
+Class: Commander
+  Key Ability: INT
+  Class Boost: Int
+
+DEFENSE
+----------------------------------------
+HP: 80
+AC: 24
+
+Saving Throws:
+  Fort: +11 (Trained)
+  Ref: +15 (Expert)
+  Will: +10 (Expert)
+
+Perception: +10 (Expert)
+Speed: 25 ft
+
+OFFENSE
+----------------------------------------
+  +1 Striking Jezail: +16 / 2d8+2 P
+
+SKILLS
+----------------------------------------
+  Acrobatics: +13 (Trained)
+  Arcana: +13 (Trained)
+  Crafting: +15 (Expert)
+  Deception: +12 (Trained)
+  Diplomacy: +12 (Trained)
+  Intimidation: +12 (Trained)
+  Occultism: +13 (Trained)
+  Religion: +8 (Trained)
+  Society: +17 (Master)
+  Thievery: +13 (Trained)
+
+Lore Skills:
+  Warfare Lore: +17 (Master)
+  Specific Deity Lore: +13 (Trained)
+
+ANIMAL COMPANIONS
+----------------------------------------
+  Mature Durian Crab (Durian Crab) [Mature]
+
+LEVEL PROGRESSION
+========================================
+
+LEVEL 1
+--------------------
+  Ability Boosts: Int, Dex, Con, Cha
+  Shield Block*
+  Quick Identification*
+  Heritage: Unbreakable Goblin
+  Class: Commander's Companion
+  Ancestry: Bouncy Goblin
+  Class Features: Commander's Banner, Gather to Me!, Reload!,
+    Defensive Retreat, Strike Hard!, Protective Screen,
+    Warfare Expertise, Military Expertise, Mountaineering Training,
+    Alley-Oop
+
+LEVEL 2
+--------------------
+  Skill: Eyes of the City
+  Class: Guiding Shot
+  Archetype: Cavalier Dedication
+
+LEVEL 3
+--------------------
+  General: Steel Your Resolve
+  Class Features: Drilled Reactions
+  Skill Increase: ___
+
+LEVEL 4
+--------------------
+  Skill: Encouraging Words
+  Class: Impressive Mount
+  Archetype: Cavalier's Charge
+
+LEVEL 5
+--------------------
+  Ability Boosts: Dex, Int, Con, Cha
+  Skill Training (INT): ___
+  Ancestry: Vandal
+  Skill Increase: ___
+
+LEVEL 6
+--------------------
+  Skill: Battle Planner
+  Class: Efficient Preparation
+  Archetype: Firebrand Braggart Dedication
+
+LEVEL 7
+--------------------
+  General: Biographical Eye
+  Class Features: Weapon Specialization
+  Skill Increase: ___
+
+* = Granted by ancestry, heritage, or background

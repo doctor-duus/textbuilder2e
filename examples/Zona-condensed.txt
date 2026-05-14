@@ -1,0 +1,22 @@
+============================================================
+  Zona Gnome Pheonix Sorc (Psyc)
+  STR -1  DEX +3  CON +2  INT +1  WIS +0  CHA +4
+============================================================
+
+Gnome (Fey-Touched Gnome) Sorcerer 3
+Background: Demon Hunted
+
+HP 32  AC 18  Fort +7 Ref +8 Will +7  Per +5
+
+Skills: Acrobatics +8(T), Athletics +4(T), Deception +9(T),
+  Diplomacy +9(T), Intimidation +11(E), Nature +5(T), Occultism +6(T),
+  Warfare Lore +6(T)
+
+FEATS
+----------------------------------------
+  Ancestry: First World Magic (1), Animal Accomplice (3)
+  Class: Reach Spell (2)
+  Archetype: Psychic Dedication (2)
+  Skill: Bon Mot (2)
+  General: Ancestral Paragon (3)
+  Awarded Feat: Intimidating Glare (1)
