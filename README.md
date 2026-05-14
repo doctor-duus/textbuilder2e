@@ -5,6 +5,7 @@ Convert [Pathbuilder 2e](https://pathbuilder2e.com/) JSON exports to human-reada
 ## Features
 
 - **Multiple templates**: Build progression, static sheet, or condensed format
+- **Social media formats**: Reddit (markdown) and Bluesky (compact) post formats
 - **Clipboard support**: Read JSON directly from clipboard (macOS)
 - **Remaster compatible**: Uses ability modifiers (not scores), no alignment
 
@@ -52,6 +53,12 @@ textbuilder2e.py -c --stdout
 
 # Specify output file
 textbuilder2e.py character.json -t static -o mycharacter.txt
+
+# Format for Reddit post (markdown)
+textbuilder2e.py character.json -p reddit --stdout
+
+# Format for Bluesky post (compact)
+textbuilder2e.py character.json -p bluesky --stdout
 ```
 
 ## Output Examples
@@ -79,11 +86,17 @@ Shows level-by-level progression: ancestry/background choices, class features, f
 ### Condensed Template
 Compact format for sharing: just the key choices with feats grouped by type (Ancestry, Class, Skill, General).
 
+### Post Formats
+For sharing builds on social media:
+- **reddit**: Markdown format with bold headings, feats grouped by type
+- **bluesky**: Ultra-compact format (~300 chars) with just key class feats
+
 ## Options
 
 | Flag | Description |
 |------|-------------|
 | `-t`, `--template` | Output template: `build`, `static`, or `condensed` |
+| `-p`, `--post` | Social media format: `reddit` or `bluesky` (overrides template) |
 | `-w`, `--width` | Line width for word wrap (default: 71, 0 to disable) |
 | `-o`, `--output` | Output file (default: `<input>.txt`) |
 | `-c`, `--clipboard` | Read JSON from clipboard (macOS) |
