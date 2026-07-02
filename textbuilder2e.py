@@ -1540,13 +1540,38 @@ def interactive_mode() -> dict:
     print("=" * 40)
     print()
 
+    # Look for JSON files in current directory
+    json_files = sorted(Path(".").glob("*.json"))
+
     # Input source
     print("Input source:")
-    print("  1. Enter file path")
-    print("  2. Read from clipboard")
+    option_num = 1
+    file_options = {}
+
+    for json_file in json_files:
+        print(f"  {option_num}. {json_file.name}")
+        file_options[str(option_num)] = json_file
+        option_num += 1
+
+    path_option = str(option_num)
+    print(f"  {path_option}. Enter file path")
+    option_num += 1
+
+    clipboard_option = str(option_num)
+    print(f"  {clipboard_option}. Read from clipboard")
+
     while True:
-        choice = input("Choose [1/2]: ").strip()
-        if choice == "1":
+        if json_files:
+            choice = input(f"Choose [1-{clipboard_option}, default=1]: ").strip()
+            if choice == "":
+                choice = "1"
+        else:
+            choice = input(f"Choose [{path_option}/{clipboard_option}]: ").strip()
+
+        if choice in file_options:
+            return_dict = {"input": str(file_options[choice]), "clipboard": False}
+            break
+        elif choice == path_option:
             file_path = input("JSON file path: ").strip()
             if not file_path:
                 print("  No path entered, try again.")
@@ -1558,11 +1583,11 @@ def interactive_mode() -> dict:
                 continue
             return_dict = {"input": str(file_path), "clipboard": False}
             break
-        elif choice == "2":
+        elif choice == clipboard_option:
             return_dict = {"input": None, "clipboard": True}
             break
         else:
-            print("  Enter 1 or 2")
+            print(f"  Enter 1-{clipboard_option}")
 
     print()
 
