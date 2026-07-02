@@ -971,9 +971,10 @@ def format_post_reddit_static(data: dict, feat_notes: dict = None) -> str:
     lines = []
     lines.append(f"# {name}")
     lines.append(f"**{ancestry}** ({heritage}) **{char_class} {level}**  ")
-    lines.append(f"Background: {background}  ")
+    lines.append(f"Background: {background}")
     if build.get("deity") and build.get("deity") != "Not set":
-        lines.append(f"Deity: {build['deity']}  ")
+        lines.append(f"Deity: {build['deity']}")
+    lines.append("")
     lines.append(f"`{' | '.join(mods)}`")
     lines.append("")
 
