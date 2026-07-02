@@ -1182,6 +1182,452 @@ def format_post_bluesky(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_post_paizo(data: dict) -> str:
+    """Format character for Paizo forums post (BBCode).
+
+    Paizo forums support: [b], [i], [u], [list][*], [url], [spoiler], [ooc], [dice]
+    They do NOT support: [size], [color], [code]
+    """
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    level = build.get("level", "?")
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"[b]{name}[/b]")
+    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"Background: {background}")
+    lines.append(f"[b]{' | '.join(mods)}[/b]")
+
+    # Feats grouped by type
+    feats = build.get("feats", [])
+    if feats:
+        feat_groups = {}
+        for feat in feats:
+            feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_note = feat[1] if isinstance(feat, list) and len(feat) > 1 and feat[1] else None
+            feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
+            feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
+
+            if feat_type == "Heritage":
+                continue
+
+            if feat_type in ["Ancestry Feat"]:
+                group = "Ancestry"
+            elif feat_type in ["Class Feat"]:
+                group = "Class"
+            elif feat_type in ["Skill Feat"]:
+                group = "Skill"
+            elif feat_type in ["General Feat"]:
+                group = "General"
+            elif feat_type in ["Archetype Feat"]:
+                group = "Archetype"
+            else:
+                group = feat_type
+
+            if group not in feat_groups:
+                feat_groups[group] = []
+            if feat_note:
+                feat_groups[group].append(f"{feat_name} [{feat_note}] ({feat_level})")
+            else:
+                feat_groups[group].append(f"{feat_name} ({feat_level})")
+
+        for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+            if group in feat_groups:
+                lines.append(f"[b]{group}:[/b] {', '.join(feat_groups[group])}")
+
+        for group, feat_list in feat_groups.items():
+            if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+                lines.append(f"[b]{group}:[/b] {', '.join(feat_list)}")
+
+    # BBCode forums handle single newlines fine
+    return "\n".join(lines)
+
+
+def format_post_paizo_build(data: dict, skill_increases: dict = None,
+                             int_skill_training: dict = None,
+                             feature_levels: dict = None,
+                             feat_notes: dict = None) -> str:
+    """Format character build progression for Paizo forums post (BBCode).
+
+    Includes level-by-level progression with skill increases and class features.
+    """
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    char_level = build.get("level", 1)
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+    key_ability = build.get("keyability", "").upper()
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"[b]{name}[/b]")
+    lines.append(f"[b]{' | '.join(mods)}[/b]")
+    lines.append("")
+
+    # Ancestry & Background
+    lines.append("[b]Ancestry & Background[/b]")
+    breakdown = abilities.get("breakdown", {})
+    ancestry_boosts = breakdown.get("ancestryBoosts", [])
+    ancestry_free = breakdown.get("ancestryFree", [])
+    background_boosts = breakdown.get("backgroundBoosts", [])
+
+    ancestry_line = f"[b]Ancestry:[/b] {ancestry}"
+    if ancestry_boosts or ancestry_free:
+        all_boosts = ancestry_boosts + ancestry_free
+        ancestry_line += f" ({', '.join(all_boosts)})"
+    lines.append(ancestry_line)
+    lines.append(f"[b]Heritage:[/b] {heritage}")
+
+    bg_line = f"[b]Background:[/b] {background}"
+    if background_boosts:
+        bg_line += f" ({', '.join(background_boosts)})"
+    lines.append(bg_line)
+
+    # Lores from background
+    lores = build.get("lores", [])
+    if lores:
+        lore_names = [l[0] if isinstance(l, list) else l for l in lores]
+        lines.append(f"[b]Lore:[/b] {', '.join(lore_names)}")
+    lines.append("")
+
+    # Class
+    lines.append("[b]Class[/b]")
+    specials = build.get("specials", [])
+    subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
+                         "Muse" in s or "Bloodline" in s or "Order" in s or
+                         "Methodology" in s or "Way" in s or "Cause" in s or
+                         "Tactics" in s]
+
+    class_line = f"[b]Class:[/b] {char_class}"
+    if key_ability:
+        class_line += f" (Key: {key_ability})"
+    lines.append(class_line)
+    if subclass_features:
+        lines.append(f"[b]Subclass:[/b] {subclass_features[0]}")
+    lines.append("")
+
+    # Level Progression
+    lines.append("[b]Level Progression[/b]")
+
+    # Prepare data structures
+    levelled_boosts = breakdown.get("mapLevelledBoosts", {})
+
+    # Extract feats by level
+    feats = build.get("feats", [])
+    feats_by_level = {}
+    for feat in feats:
+        if isinstance(feat, list) and len(feat) >= 4:
+            feat_name = feat[0]
+            feat_note = feat[1] if feat[1] else None
+            feat_type = feat[2]
+            feat_level = feat[3]
+
+            if feat_level not in feats_by_level:
+                feats_by_level[feat_level] = []
+
+            # Check for note override from build file
+            if feat_notes and (feat_name, feat_level) in feat_notes:
+                feat_note = feat_notes[(feat_name, feat_level)]
+
+            display = feat_name
+            if feat_note:
+                display += f" [{feat_note}]"
+            feats_by_level[feat_level].append((feat_type, display))
+
+    # Group class features by level
+    features_by_level = {}
+    heritage_name = build.get("heritage", "")
+    ancestry_features = {heritage_name, "Darkvision", "Low-Light Vision"}
+    for special in specials:
+        if special in ancestry_features or special in subclass_features:
+            continue
+        if feature_levels and special in feature_levels:
+            feat_level = feature_levels[special]
+        else:
+            feat_level = get_feature_level(char_class, special)
+        if feat_level not in features_by_level:
+            features_by_level[feat_level] = []
+        features_by_level[feat_level].append(special)
+
+    skill_increase_levels = get_skill_increase_levels(char_class, char_level)
+    int_training_levels = get_int_skill_training_levels(abilities, char_level)
+
+    for lvl in range(1, char_level + 1):
+        level_items = []
+
+        # Ability boosts
+        lvl_str = str(lvl)
+        if lvl_str in levelled_boosts and levelled_boosts[lvl_str]:
+            boosts = levelled_boosts[lvl_str]
+            level_items.append(f"Boosts: {', '.join(boosts)}")
+
+        # INT-based skill training
+        if lvl in int_training_levels:
+            if int_skill_training and lvl in int_skill_training and int_skill_training[lvl]:
+                level_items.append(f"Skill (INT): {int_skill_training[lvl]}")
+            else:
+                level_items.append("Skill (INT): ___")
+
+        # Feats
+        if lvl in feats_by_level:
+            for feat_type, feat_name in feats_by_level[lvl]:
+                if feat_type == "Awarded Feat":
+                    level_items.append(f"{feat_name}*")
+                else:
+                    type_short = feat_type.replace(" Feat", "")
+                    level_items.append(f"{type_short}: {feat_name}")
+
+        # Class features
+        if lvl in features_by_level:
+            features = features_by_level[lvl]
+            if features:
+                level_items.append(f"Features: {', '.join(features)}")
+
+        # Skill increases
+        if lvl in skill_increase_levels:
+            if skill_increases and lvl in skill_increases and skill_increases[lvl]:
+                level_items.append(f"Skill↑: {skill_increases[lvl]}")
+            else:
+                level_items.append("Skill↑: ___")
+
+        if level_items:
+            lines.append(f"[b]Level {lvl}:[/b] {' • '.join(level_items)}")
+
+    lines.append("")
+    lines.append("[i]* = Granted by ancestry, heritage, or background[/i]")
+
+    return "\n".join(lines)
+
+
+def format_post_paizo_static(data: dict, feat_notes: dict = None) -> str:
+    """Format static character sheet for Paizo forums post (BBCode).
+
+    Uses BBCode formatting for proper Paizo forum rendering.
+    """
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+    attrs = build.get("attributes", {})
+    profs = build.get("proficiencies", {})
+    ac_info = build.get("acTotal", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    level = build.get("level", 1)
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"[b]{name}[/b]")
+    lines.append(f"[b]{ancestry}[/b] ({heritage}) [b]{char_class} {level}[/b]")
+    lines.append(f"Background: {background}")
+    if build.get("deity") and build.get("deity") != "Not set":
+        lines.append(f"Deity: {build['deity']}")
+    lines.append(f"[b]{' | '.join(mods)}[/b]")
+    lines.append("")
+
+    # Defenses
+    lines.append("[b]Defenses[/b]")
+    ancestry_hp = attrs.get("ancestryhp", 0)
+    class_hp = attrs.get("classhp", 0)
+    con_mod = get_modifier(abilities.get("con", 10))
+    bonus_hp = attrs.get("bonushp", 0)
+    bonus_per_level = attrs.get("bonushpPerLevel", 0)
+    total_hp = ancestry_hp + (class_hp + con_mod + bonus_per_level) * level + bonus_hp
+
+    ac = ac_info.get("acTotal", 10)
+    shield = ac_info.get("shieldBonus", 0)
+    ac_str = f"[b]AC {ac}[/b]" + (f" ({ac + int(shield)} w/shield)" if shield else "")
+
+    # Saves
+    saves = []
+    for save, abbr in [("fortitude", "Fort"), ("reflex", "Ref"), ("will", "Will")]:
+        prof = profs.get(save, 0)
+        ability = {"fortitude": "con", "reflex": "dex", "will": "wis"}[save]
+        ability_mod = get_modifier(abilities.get(ability, 10))
+        total = prof + (level if prof > 0 else 0) + ability_mod
+        saves.append(f"{abbr} {format_modifier(total)}")
+
+    perc_prof = profs.get("perception", 0)
+    perc_mod = get_modifier(abilities.get("wis", 10))
+    perc_total = perc_prof + (level if perc_prof > 0 else 0) + perc_mod
+
+    speed = attrs.get("speed", 25) + attrs.get("speedBonus", 0)
+
+    lines.append(f"[b]HP {total_hp}[/b] | {ac_str}")
+    lines.append(f"[b]Saves:[/b] {' / '.join(saves)}")
+    lines.append(f"[b]Perception:[/b] {format_modifier(perc_total)} | [b]Speed:[/b] {speed} ft")
+    lines.append("")
+
+    # Skills
+    lines.append("[b]Skills[/b]")
+    skill_abilities = {
+        "acrobatics": "dex", "arcana": "int", "athletics": "str",
+        "crafting": "int", "deception": "cha", "diplomacy": "cha",
+        "intimidation": "cha", "medicine": "wis", "nature": "wis",
+        "occultism": "int", "performance": "cha", "religion": "wis",
+        "society": "int", "stealth": "dex", "survival": "wis", "thievery": "dex"
+    }
+
+    trained_skills = []
+    for skill, ability in skill_abilities.items():
+        prof = profs.get(skill, 0)
+        if prof > 0:
+            ability_mod = get_modifier(abilities.get(ability, 10))
+            total = prof + level + ability_mod
+            rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(prof, "?")
+            trained_skills.append(f"{skill.capitalize()} {format_modifier(total)}({rank_abbr})")
+
+    # Lores
+    lores = build.get("lores", [])
+    int_mod = get_modifier(abilities.get("int", 10))
+    for lore in lores:
+        lore_name = lore[0] if isinstance(lore, list) else lore
+        lore_prof = lore[1] if isinstance(lore, list) and len(lore) > 1 else 2
+        total = lore_prof + level + int_mod
+        rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(lore_prof, "?")
+        trained_skills.append(f"{lore_name} Lore {format_modifier(total)}({rank_abbr})")
+
+    lines.append(", ".join(sorted(trained_skills)))
+    lines.append("")
+
+    # Feats
+    feats = build.get("feats", [])
+    if feats:
+        lines.append("[b]Feats[/b]")
+        feat_groups = {}
+        for feat in feats:
+            feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_note = feat[1] if isinstance(feat, list) and len(feat) > 1 and feat[1] else None
+            feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
+            feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
+
+            if feat_type == "Heritage":
+                continue
+
+            if feat_type in ["Ancestry Feat"]:
+                group = "Ancestry"
+            elif feat_type in ["Class Feat"]:
+                group = "Class"
+            elif feat_type in ["Skill Feat"]:
+                group = "Skill"
+            elif feat_type in ["General Feat"]:
+                group = "General"
+            elif feat_type in ["Archetype Feat"]:
+                group = "Archetype"
+            else:
+                group = feat_type
+
+            if group not in feat_groups:
+                feat_groups[group] = []
+            # Check for note override from build file
+            if feat_notes and (feat_name, feat_level) in feat_notes:
+                feat_note = feat_notes[(feat_name, feat_level)]
+            # Include feat note (e.g., skill for Assurance) if present
+            if feat_note:
+                feat_groups[group].append(f"{feat_name} [{feat_note}] ({feat_level})")
+            else:
+                feat_groups[group].append(f"{feat_name} ({feat_level})")
+
+        lines.append("[list]")
+        for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+            if group in feat_groups:
+                lines.append(f"[*][b]{group}:[/b] {', '.join(feat_groups[group])}")
+
+        for group, feat_list in feat_groups.items():
+            if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+                lines.append(f"[*][b]{group}:[/b] {', '.join(feat_list)}")
+        lines.append("[/list]")
+        lines.append("")
+
+    # Spells
+    spell_casters = build.get("spellCasters", [])
+    active_casters = [c for c in spell_casters if any(s.get("list", []) for s in c.get("spells", []))]
+    if active_casters:
+        lines.append("[b]Spells[/b]")
+        for caster in active_casters:
+            caster_name = caster.get("name", "Unknown")
+            tradition = caster.get("magicTradition", "").capitalize()
+            spells = caster.get("spells", [])
+
+            spell_by_level = []
+            for spell_entry in spells:
+                spell_level = spell_entry.get("spellLevel", 0)
+                spell_list = spell_entry.get("list", [])
+                if spell_list:
+                    if spell_level == 0:
+                        spell_by_level.append(f"[b]Cantrips:[/b] {', '.join(spell_list)}")
+                    else:
+                        spell_by_level.append(f"[b]R{spell_level}:[/b] {', '.join(spell_list)}")
+
+            if spell_by_level:
+                lines.append(f"[b]{caster_name}[/b] ({tradition})")
+                lines.append("[list]")
+                for spell_line in spell_by_level:
+                    lines.append(f"[*]{spell_line}")
+                lines.append("[/list]")
+                lines.append("")
+
+    # Weapons
+    weapons = build.get("weapons", [])
+    if weapons:
+        lines.append("[b]Weapons[/b]")
+        lines.append("[list]")
+        for weapon in weapons:
+            display = weapon.get("display", weapon.get("name", "Unknown"))
+            attack = weapon.get("attack", 0)
+            die = weapon.get("die", "d4")
+            damage_bonus = weapon.get("damageBonus", 0)
+            striking = weapon.get("str", "")
+
+            num_dice = 1
+            if striking == "striking":
+                num_dice = 2
+            elif striking == "greaterStriking":
+                num_dice = 3
+            elif striking == "majorStriking":
+                num_dice = 4
+
+            damage_str = f"{num_dice}{die}"
+            if damage_bonus:
+                damage_str += f"+{damage_bonus}" if damage_bonus > 0 else str(damage_bonus)
+
+            lines.append(f"[*][b]{display}:[/b] {format_modifier(attack)} to hit, {damage_str} damage")
+        lines.append("[/list]")
+
+    return "\n".join(lines)
+
+
 def get_skill_increase_levels(char_class: str, char_level: int) -> list:
     """Return list of levels where this class gets skill increases."""
     if char_class == "Rogue":
@@ -1814,9 +2260,12 @@ def interactive_mode() -> dict:
     print("  4. reddit        - Reddit markdown (compact)")
     print("  5. reddit-build  - Reddit markdown (full build)")
     print("  6. reddit-static - Reddit markdown (character sheet)")
-    print("  7. bluesky       - Ultra-compact for Bluesky")
+    print("  7. paizo         - Paizo BBCode (compact)")
+    print("  8. paizo-build   - Paizo BBCode (full build)")
+    print("  9. paizo-static  - Paizo BBCode (character sheet)")
+    print(" 10. bluesky       - Ultra-compact for Bluesky")
     while True:
-        choice = input("Choose [1-7, default=1]: ").strip()
+        choice = input("Choose [1-10, default=1]: ").strip()
         if choice == "" or choice == "1":
             return_dict["template"] = "build"
             return_dict["post"] = None
@@ -1843,10 +2292,22 @@ def interactive_mode() -> dict:
             break
         elif choice == "7":
             return_dict["template"] = "build"
+            return_dict["post"] = "paizo"
+            break
+        elif choice == "8":
+            return_dict["template"] = "build"
+            return_dict["post"] = "paizo-build"
+            break
+        elif choice == "9":
+            return_dict["template"] = "static"
+            return_dict["post"] = "paizo-static"
+            break
+        elif choice == "10":
+            return_dict["template"] = "build"
             return_dict["post"] = "bluesky"
             break
         else:
-            print("  Enter 1-7")
+            print("  Enter 1-10")
 
     print()
 
@@ -1989,6 +2450,9 @@ Post formats (-p):
   reddit           Compact Reddit markdown (just feats + basic info)
   reddit-build     Full build progression in Reddit markdown
   reddit-static    Character sheet in Reddit markdown
+  paizo            Compact Paizo BBCode (just feats + basic info)
+  paizo-build      Full build progression in Paizo BBCode
+  paizo-static     Character sheet in Paizo BBCode
   bluesky          Ultra-compact for Bluesky's character limit
 
 Examples:
@@ -2002,8 +2466,9 @@ Examples:
     parser.add_argument("input", nargs="?", help="Input JSON file")
     parser.add_argument("-t", "--template", choices=["build", "static", "condensed"],
                         default="build", help="Output template (default: build)")
-    parser.add_argument("-p", "--post", choices=["reddit", "reddit-build", "reddit-static", "bluesky"],
-                        help="Format for social media post (overrides --template)")
+    parser.add_argument("-p", "--post", choices=["reddit", "reddit-build", "reddit-static",
+                                                  "paizo", "paizo-build", "paizo-static", "bluesky"],
+                        help="Format for social media/forum post (overrides --template)")
     parser.add_argument("-w", "--width", type=int, default=71,
                         help="Line width for word wrap (default: 71, 0 to disable)")
     parser.add_argument("-o", "--output", help="Output file (default: <input>-<template>.txt)")
@@ -2086,6 +2551,44 @@ Examples:
             if build_file.exists():
                 _, _, _, feat_notes = parse_build_file(build_file)
         formatted = format_post_reddit_static(data, feat_notes)
+    elif args.post == "paizo":
+        formatted = format_post_paizo(data)
+    elif args.post == "paizo-build":
+        # Paizo-build needs prompts like the build template
+        skill_increases = {}
+        int_skill_training = {}
+        feature_levels = {}
+        feat_notes = {}
+
+        # Try to auto-load from existing -build.txt file
+        if input_path:
+            build_file = input_path.parent / f"{input_path.stem}-build.txt"
+            if build_file.exists():
+                skill_increases, int_skill_training, feature_levels, feat_notes = parse_build_file(build_file)
+                if skill_increases or int_skill_training or feature_levels:
+                    print(f"Loaded choices from: {build_file}", file=sys.stderr)
+
+        if not args.no_prompt and not (skill_increases or int_skill_training or feature_levels):
+            build = data.get("build", data)
+            char_class = build.get("class", "Unknown")
+            char_level = build.get("level", 1)
+            profs = build.get("proficiencies", {})
+            abilities = build.get("abilities", {})
+            specials = build.get("specials", [])
+            heritage = build.get("heritage", "")
+            feature_levels = prompt_class_feature_levels(
+                char_class, char_level, specials, heritage)
+            skill_increases, int_skill_training = prompt_skill_training_and_increases(
+                char_class, char_level, profs, abilities)
+        formatted = format_post_paizo_build(data, skill_increases, int_skill_training, feature_levels, feat_notes)
+    elif args.post == "paizo-static":
+        # Load feat_notes from build file if available
+        feat_notes = {}
+        if input_path:
+            build_file = input_path.parent / f"{input_path.stem}-build.txt"
+            if build_file.exists():
+                _, _, _, feat_notes = parse_build_file(build_file)
+        formatted = format_post_paizo_static(data, feat_notes)
     elif args.post == "bluesky":
         formatted = format_post_bluesky(data)
     elif args.template == "static":

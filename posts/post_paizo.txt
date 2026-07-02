@@ -1,0 +1,103 @@
+[b]Title:[/b] Textbuilder2e - Convert Pathbuilder exports to readable text (now with Paizo BBCode support!)
+
+[b]Post:[/b]
+
+I made a small Python script that converts Pathbuilder 2e JSON exports into clean, readable text formats. Useful for sharing builds on the Paizo forums, Discord, Reddit, printing character sheets, or just having a plain text backup.
+
+[b]Output Formats:[/b]
+
+[b]Text templates:[/b]
+[list]
+[*][b]build[/b] (default) - level-by-level progression showing your choices
+[*][b]static[/b] - complete character sheet with all stats
+[*][b]condensed[/b] - compact format for quick sharing
+[/list]
+
+[b]Forum/social formats:[/b]
+[list]
+[*][b]reddit[/b] / [b]reddit-build[/b] / [b]reddit-static[/b] - Reddit markdown
+[*][b]paizo[/b] / [b]paizo-build[/b] / [b]paizo-static[/b] - Paizo forum BBCode
+[*][b]bluesky[/b] - ultra-compact for Bluesky
+[/list]
+
+[b]Features:[/b]
+[list]
+[*]Remaster compatible (ability modifiers, no alignment)
+[*]Native BBCode output for Paizo forums
+[*]Smart word wrap for text formats
+[*]Read from clipboard with -c flag
+[*]Interactive mode when run without arguments
+[/list]
+
+[b]Usage:[/b]
+
+[i]# Generate Paizo BBCode output[/i]
+textbuilder2e.py character.json -p paizo-static --stdout
+
+[i]# Generate plain text[/i]
+textbuilder2e.py character.json -t static
+
+[i]# Read from clipboard, copy result to clipboard[/i]
+textbuilder2e.py -c --copy
+
+Free, open source, no dependencies beyond Python 3.10+.
+
+GitHub: https://github.com/doctor-duus/textbuilder2e
+
+Happy to take feedback if anyone finds it useful!
+
+---
+
+[b]Example output (paizo-static format):[/b]
+
+[b]Hearth Birdsong, a runaway noble gnome phoenix sorcerer (enigma bard archetype) diplomancer[/b]
+[b]Gnome[/b] (Fey-Touched Gnome) [b]Sorcerer 10[/b]
+Background: Runaway Noble (Genealogy)
+[b]STR -1 | DEX +4 | CON +4 | INT +1 | WIS +3 | CHA +5[/b]
+
+[b]Defenses[/b]
+[b]HP 108[/b] | [b]AC 26[/b] (28 w/shield)
+[b]Saves:[/b] Fort +18 / Ref +18 / Will +17
+[b]Perception:[/b] +15 | [b]Speed:[/b] 30 ft
+
+[b]Skills[/b]
+Acrobatics +16(T), Athletics +11(T), Diplomacy +21(M), Genealogy Lore +13(T), Intimidation +17(T), Nature +15(T), Occultism +13(T), Performance +21(M), Religion +15(T)
+
+[b]Feats[/b]
+[list]
+[*][b]Ancestry:[/b] Animal Accomplice (1), Empathetic Plea (3), Animal Elocutionist (5), First World Adept (9)
+[*][b]Class:[/b] Reach Spell (2), Primal Evolution (4), Counter Perform (6), Advanced Muse's Whispers (8), Signature Spell Expansion (10)
+[*][b]Archetype:[/b] Bard Dedication (2), Basic Muse's Whispers (4), Basic Bard Spellcasting (6), Anthemic Performance (8), Advanced Muse's Whispers (10)
+[*][b]Skill:[/b] Assurance [Athletics] (2), Glad-Hand (4), Distracting Performance (6), Shameless Request (8), Battle Cry (10)
+[*][b]General:[/b] Ancestral Paragon (3), Fleet (7)
+[*][b]Awarded Feat:[/b] Bon Mot (1), Versatile Performance (10)
+[*][b]Bard Feat:[/b] Loremaster's Etude (4), Multifarious Muse [Maestro] (8), Multifarious Muse [Polymath] (10)
+[/list]
+
+[b]Spells[/b]
+[b]Sorcerer[/b] (Primal)
+[list]
+[*][b]Cantrips:[/b] Electric Arc, Frostbite, Prestidigitation, Ignition, Detect Magic, Eat Fire
+[*][b]R1:[/b] Heal, Charm, Goblin Pox, Burning Hands
+[*][b]R2:[/b] Revealing Light, Sudden Bolt, Floating Flame, See Invisibility
+[*][b]R3:[/b] Haste, Fear, Slow, Fireball
+[*][b]R4:[/b] Air Walk, Mountain Resilience, Unfettered Movement, Remove Curse
+[/list]
+
+[b]Fey Touched Gnome[/b] (Primal)
+[list]
+[*][b]Cantrips:[/b] Rousing Splash
+[/list]
+
+[b]Archetype Bard[/b] (Occult)
+[list]
+[*][b]Cantrips:[/b] Daze, Figment
+[*][b]R1:[/b] Phantom Pain
+[*][b]R2:[/b] Laughing Fit
+[*][b]R3:[/b] Heroism
+[/list]
+
+[b]First World Adept[/b] (Primal)
+[list]
+[*][b]R2:[/b] Invisibility, Revealing Light
+[/list]
