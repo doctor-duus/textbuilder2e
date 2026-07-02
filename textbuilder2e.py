@@ -400,7 +400,7 @@ def format_character_static(data: dict) -> str:
 
             display = feat_name
             if feat_note:
-                display += f" ({feat_note})"
+                display += f" [{feat_note}]"
             feat_groups[feat_type].append((feat_level, display))
 
         for feat_type in ["Heritage", "Ancestry Feat", "Class Feat", "Archetype Feat",
@@ -737,6 +737,7 @@ def format_post_reddit(data: dict) -> str:
         feat_groups = {}
         for feat in feats:
             feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_note = feat[1] if isinstance(feat, list) and len(feat) > 1 and feat[1] else None
             feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
             feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
 
@@ -758,7 +759,10 @@ def format_post_reddit(data: dict) -> str:
 
             if group not in feat_groups:
                 feat_groups[group] = []
-            feat_groups[group].append(f"{feat_name} ({feat_level})")
+            if feat_note:
+                feat_groups[group].append(f"{feat_name} [{feat_note}] ({feat_level})")
+            else:
+                feat_groups[group].append(f"{feat_name} ({feat_level})")
 
         for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
             if group in feat_groups:
@@ -865,7 +869,7 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
 
             display = feat_name
             if feat_note:
-                display += f" ({feat_note})"
+                display += f" [{feat_note}]"
             feats_by_level[feat_level].append((feat_type, display))
 
     # Group class features by level
@@ -1400,7 +1404,7 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
 
             display = feat_name
             if feat_note:
-                display += f" ({feat_note})"
+                display += f" [{feat_note}]"
             feats_by_level[feat_level].append((feat_type, display))
 
     # Extract lores (from background, level 1)
