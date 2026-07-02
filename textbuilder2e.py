@@ -778,7 +778,8 @@ def format_post_reddit(data: dict) -> str:
 
 def format_post_reddit_build(data: dict, skill_increases: dict = None,
                               int_skill_training: dict = None,
-                              feature_levels: dict = None) -> str:
+                              feature_levels: dict = None,
+                              feat_notes: dict = None) -> str:
     """Format character build progression for Reddit post (markdown).
 
     Includes level-by-level progression with skill increases and class features.
@@ -867,6 +868,10 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
             if feat_level not in feats_by_level:
                 feats_by_level[feat_level] = []
 
+            # Check for note override from build file
+            if feat_notes and (feat_name, feat_level) in feat_notes:
+                feat_note = feat_notes[(feat_name, feat_level)]
+
             display = feat_name
             if feat_note:
                 display += f" [{feat_note}]"
@@ -938,7 +943,7 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
     return "\n\n".join(lines)
 
 
-def format_post_reddit_static(data: dict) -> str:
+def format_post_reddit_static(data: dict, feat_notes: dict = None) -> str:
     """Format static character sheet for Reddit post (markdown).
 
     Uses bullet lists and explicit line breaks for proper Reddit rendering.
@@ -1066,6 +1071,9 @@ def format_post_reddit_static(data: dict) -> str:
 
             if group not in feat_groups:
                 feat_groups[group] = []
+            # Check for note override from build file
+            if feat_notes and (feat_name, feat_level) in feat_notes:
+                feat_note = feat_notes[(feat_name, feat_level)]
             # Include feat note (e.g., skill for Assurance) if present
             if feat_note:
                 feat_groups[group].append(f"{feat_name} [{feat_note}] ({feat_level})")
@@ -1352,7 +1360,7 @@ def prompt_class_feature_levels(char_class: str, char_level: int, specials: list
     return feature_levels
 
 
-def format_character_build(data: dict, skill_increases: dict = None, int_skill_training: dict = None, feature_levels: dict = None) -> str:
+def format_character_build(data: dict, skill_increases: dict = None, int_skill_training: dict = None, feature_levels: dict = None, feat_notes: dict = None) -> str:
     """Convert Pathbuilder JSON to build progression format."""
     build = data.get("build", data)
     lines = []
@@ -1401,6 +1409,10 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
 
             if feat_level not in feats_by_level:
                 feats_by_level[feat_level] = []
+
+            # Check for note override from build file
+            if feat_notes and (feat_name, feat_level) in feat_notes:
+                feat_note = feat_notes[(feat_name, feat_level)]
 
             display = feat_name
             if feat_note:
@@ -1870,19 +1882,28 @@ def parse_build_file(build_file_path: Path) -> tuple:
     - Skill increases (e.g., "Skill Increase: Diplomacy")
     - INT-based skill training (e.g., "Skill Training (INT): Religion")
     - Class feature levels (e.g., "Class Features: Enigma, Maestro")
+    - Feat notes (e.g., Multifarious Muse -> Maestro from class features at same level)
 
     Returns:
-        tuple: (skill_increases dict, int_skill_training dict, feature_levels dict)
+        tuple: (skill_increases dict, int_skill_training dict, feature_levels dict, feat_notes dict)
     """
     skill_increases = {}
     int_skill_training = {}
     feature_levels = {}
+    feat_notes = {}  # Maps (feat_name, level) -> note
+
+    # Feats that get their "note" from a class feature gained at the same level
+    FEAT_GETS_NOTE_FROM_FEATURE = {"Multifarious Muse"}
 
     try:
         with open(build_file_path, "r", encoding="utf-8") as f:
             content = f.read()
     except (FileNotFoundError, IOError):
-        return skill_increases, int_skill_training, feature_levels
+        return skill_increases, int_skill_training, feature_levels, feat_notes
+
+    # First pass: collect feats and features by level
+    feats_by_level = {}  # level -> list of feat names
+    features_by_level = {}  # level -> list of feature names
 
     current_level = None
     in_progression = False
@@ -1922,13 +1943,35 @@ def parse_build_file(build_file_path: Path) -> tuple:
         elif stripped.startswith("Class Features:"):
             features_str = stripped.replace("Class Features:", "").strip()
             if features_str:
-                # Split by comma and assign each feature to current level
                 features = [f.strip() for f in features_str.split(',')]
                 for feature in features:
                     if feature:
                         feature_levels[feature] = current_level
+                        if current_level not in features_by_level:
+                            features_by_level[current_level] = []
+                        features_by_level[current_level].append(feature)
 
-    return skill_increases, int_skill_training, feature_levels
+        # Parse feat lines (e.g., "Bard: Multifarious Muse")
+        elif ": " in stripped and not stripped.startswith("Ability"):
+            # Could be a feat line like "Bard: Multifarious Muse" or "Class: Reach Spell"
+            parts = stripped.split(": ", 1)
+            if len(parts) == 2:
+                feat_name = parts[1]
+                if feat_name in FEAT_GETS_NOTE_FROM_FEATURE:
+                    if current_level not in feats_by_level:
+                        feats_by_level[current_level] = []
+                    feats_by_level[current_level].append(feat_name)
+
+    # Second pass: associate feats with class features at same level
+    for level, feat_list in feats_by_level.items():
+        if level in features_by_level:
+            features = features_by_level[level]
+            for feat_name in feat_list:
+                if feat_name in FEAT_GETS_NOTE_FROM_FEATURE and features:
+                    # Take the first feature as the note (usually there's only one)
+                    feat_notes[(feat_name, level)] = features[0]
+
+    return skill_increases, int_skill_training, feature_levels, feat_notes
 
 
 def main():
@@ -2011,11 +2054,13 @@ Examples:
         int_skill_training = {}
         feature_levels = {}
 
+        feat_notes = {}
+
         # Try to auto-load from existing -build.txt file
         if input_path:
             build_file = input_path.parent / f"{input_path.stem}-build.txt"
             if build_file.exists():
-                skill_increases, int_skill_training, feature_levels = parse_build_file(build_file)
+                skill_increases, int_skill_training, feature_levels, feat_notes = parse_build_file(build_file)
                 if skill_increases or int_skill_training or feature_levels:
                     print(f"Loaded choices from: {build_file}", file=sys.stderr)
 
@@ -2031,9 +2076,15 @@ Examples:
                 char_class, char_level, specials, heritage)
             skill_increases, int_skill_training = prompt_skill_training_and_increases(
                 char_class, char_level, profs, abilities)
-        formatted = format_post_reddit_build(data, skill_increases, int_skill_training, feature_levels)
+        formatted = format_post_reddit_build(data, skill_increases, int_skill_training, feature_levels, feat_notes)
     elif args.post == "reddit-static":
-        formatted = format_post_reddit_static(data)
+        # Load feat_notes from build file if available
+        feat_notes = {}
+        if input_path:
+            build_file = input_path.parent / f"{input_path.stem}-build.txt"
+            if build_file.exists():
+                _, _, _, feat_notes = parse_build_file(build_file)
+        formatted = format_post_reddit_static(data, feat_notes)
     elif args.post == "bluesky":
         formatted = format_post_bluesky(data)
     elif args.template == "static":
@@ -2045,12 +2096,13 @@ Examples:
         skill_increases = {}
         int_skill_training = {}
         feature_levels = {}
+        feat_notes = {}
 
         # Try to auto-load from existing -build.txt file
         if input_path:
             build_file = input_path.parent / f"{input_path.stem}-build.txt"
             if build_file.exists():
-                skill_increases, int_skill_training, feature_levels = parse_build_file(build_file)
+                skill_increases, int_skill_training, feature_levels, feat_notes = parse_build_file(build_file)
                 if skill_increases or int_skill_training or feature_levels:
                     print(f"Loaded choices from: {build_file}", file=sys.stderr)
 
@@ -2068,7 +2120,7 @@ Examples:
             # Then skill training/increases
             skill_increases, int_skill_training = prompt_skill_training_and_increases(
                 char_class, char_level, profs, abilities)
-        formatted = format_character_build(data, skill_increases, int_skill_training, feature_levels)
+        formatted = format_character_build(data, skill_increases, int_skill_training, feature_levels, feat_notes)
 
     # Apply word wrap (skip for post formats - platforms handle their own wrapping)
     if not args.post:
