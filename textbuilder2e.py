@@ -1040,6 +1040,7 @@ def format_post_reddit_static(data: dict) -> str:
         feat_groups = {}
         for feat in feats:
             feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_note = feat[1] if isinstance(feat, list) and len(feat) > 1 and feat[1] else None
             feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
             feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
 
@@ -1061,7 +1062,11 @@ def format_post_reddit_static(data: dict) -> str:
 
             if group not in feat_groups:
                 feat_groups[group] = []
-            feat_groups[group].append(f"{feat_name} ({feat_level})")
+            # Include feat note (e.g., skill for Assurance) if present
+            if feat_note:
+                feat_groups[group].append(f"{feat_name} [{feat_note}] ({feat_level})")
+            else:
+                feat_groups[group].append(f"{feat_name} ({feat_level})")
 
         for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
             if group in feat_groups:
