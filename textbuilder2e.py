@@ -1530,6 +1530,100 @@ def read_from_clipboard() -> str:
         sys.exit(1)
 
 
+def interactive_mode() -> dict:
+    """Run interactive prompts when no command line arguments provided.
+
+    Returns:
+        dict with keys: input, clipboard, template, post, stdout
+    """
+    print("Textbuilder2e - Interactive Mode")
+    print("=" * 40)
+    print()
+
+    # Input source
+    print("Input source:")
+    print("  1. Enter file path")
+    print("  2. Read from clipboard")
+    while True:
+        choice = input("Choose [1/2]: ").strip()
+        if choice == "1":
+            file_path = input("JSON file path: ").strip()
+            if not file_path:
+                print("  No path entered, try again.")
+                continue
+            # Expand ~ and check existence
+            file_path = Path(file_path).expanduser()
+            if not file_path.exists():
+                print(f"  File not found: {file_path}")
+                continue
+            return_dict = {"input": str(file_path), "clipboard": False}
+            break
+        elif choice == "2":
+            return_dict = {"input": None, "clipboard": True}
+            break
+        else:
+            print("  Enter 1 or 2")
+
+    print()
+
+    # Output format
+    print("Output format:")
+    print("  1. build        - Level-by-level progression (default)")
+    print("  2. static       - Complete character sheet")
+    print("  3. condensed    - Compact feats list")
+    print("  4. reddit       - Reddit markdown (compact)")
+    print("  5. reddit-build - Reddit markdown (full build)")
+    print("  6. bluesky      - Ultra-compact for Bluesky")
+    while True:
+        choice = input("Choose [1-6, default=1]: ").strip()
+        if choice == "" or choice == "1":
+            return_dict["template"] = "build"
+            return_dict["post"] = None
+            break
+        elif choice == "2":
+            return_dict["template"] = "static"
+            return_dict["post"] = None
+            break
+        elif choice == "3":
+            return_dict["template"] = "condensed"
+            return_dict["post"] = None
+            break
+        elif choice == "4":
+            return_dict["template"] = "build"
+            return_dict["post"] = "reddit"
+            break
+        elif choice == "5":
+            return_dict["template"] = "build"
+            return_dict["post"] = "reddit-build"
+            break
+        elif choice == "6":
+            return_dict["template"] = "build"
+            return_dict["post"] = "bluesky"
+            break
+        else:
+            print("  Enter 1-6")
+
+    print()
+
+    # Output destination
+    print("Output destination:")
+    print("  1. Print to screen (stdout)")
+    print("  2. Write to file (auto-named)")
+    while True:
+        choice = input("Choose [1/2, default=1]: ").strip()
+        if choice == "" or choice == "1":
+            return_dict["stdout"] = True
+            break
+        elif choice == "2":
+            return_dict["stdout"] = False
+            break
+        else:
+            print("  Enter 1 or 2")
+
+    print()
+    return return_dict
+
+
 def parse_build_file(build_file_path: Path) -> tuple:
     """Parse an existing -build.txt file to extract user choices.
 
@@ -1638,10 +1732,14 @@ Examples:
 
     args = parser.parse_args()
 
-    # Validate arguments
+    # Interactive mode if no arguments provided
     if not args.clipboard and not args.input:
-        parser.print_help()
-        sys.exit(1)
+        interactive = interactive_mode()
+        args.input = interactive["input"]
+        args.clipboard = interactive["clipboard"]
+        args.post = interactive["post"]
+        args.template = interactive["template"]
+        args.stdout = interactive["stdout"]
 
     # Load JSON
     input_path = None
