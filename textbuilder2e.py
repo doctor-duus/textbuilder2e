@@ -772,6 +772,168 @@ def format_post_reddit(data: dict) -> str:
     return "\n\n".join(lines)
 
 
+def format_post_reddit_build(data: dict, skill_increases: dict = None,
+                              int_skill_training: dict = None,
+                              feature_levels: dict = None) -> str:
+    """Format character build progression for Reddit post (markdown).
+
+    Includes level-by-level progression with skill increases and class features.
+    """
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    char_level = build.get("level", 1)
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+    key_ability = build.get("keyability", "").upper()
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"# {name}")
+    lines.append(f"`{' | '.join(mods)}`")
+    lines.append("")
+
+    # Ancestry & Background
+    lines.append("## Ancestry & Background")
+    breakdown = abilities.get("breakdown", {})
+    ancestry_boosts = breakdown.get("ancestryBoosts", [])
+    ancestry_free = breakdown.get("ancestryFree", [])
+    background_boosts = breakdown.get("backgroundBoosts", [])
+
+    ancestry_line = f"**Ancestry:** {ancestry}"
+    if ancestry_boosts or ancestry_free:
+        all_boosts = ancestry_boosts + ancestry_free
+        ancestry_line += f" ({', '.join(all_boosts)})"
+    lines.append(ancestry_line)
+    lines.append(f"**Heritage:** {heritage}")
+
+    bg_line = f"**Background:** {background}"
+    if background_boosts:
+        bg_line += f" ({', '.join(background_boosts)})"
+    lines.append(bg_line)
+
+    # Lores from background
+    lores = build.get("lores", [])
+    if lores:
+        lore_names = [l[0] if isinstance(l, list) else l for l in lores]
+        lines.append(f"**Lore:** {', '.join(lore_names)}")
+    lines.append("")
+
+    # Class
+    lines.append("## Class")
+    specials = build.get("specials", [])
+    subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
+                         "Muse" in s or "Bloodline" in s or "Order" in s or
+                         "Methodology" in s or "Way" in s or "Cause" in s or
+                         "Tactics" in s]
+
+    class_line = f"**Class:** {char_class}"
+    if key_ability:
+        class_line += f" (Key: {key_ability})"
+    lines.append(class_line)
+    if subclass_features:
+        lines.append(f"**Subclass:** {subclass_features[0]}")
+    lines.append("")
+
+    # Level Progression
+    lines.append("## Level Progression")
+
+    # Prepare data structures
+    levelled_boosts = breakdown.get("mapLevelledBoosts", {})
+
+    # Extract feats by level
+    feats = build.get("feats", [])
+    feats_by_level = {}
+    for feat in feats:
+        if isinstance(feat, list) and len(feat) >= 4:
+            feat_name = feat[0]
+            feat_note = feat[1] if feat[1] else None
+            feat_type = feat[2]
+            feat_level = feat[3]
+
+            if feat_level not in feats_by_level:
+                feats_by_level[feat_level] = []
+
+            display = feat_name
+            if feat_note:
+                display += f" ({feat_note})"
+            feats_by_level[feat_level].append((feat_type, display))
+
+    # Group class features by level
+    features_by_level = {}
+    heritage_name = build.get("heritage", "")
+    ancestry_features = {heritage_name, "Darkvision", "Low-Light Vision"}
+    for special in specials:
+        if special in ancestry_features or special in subclass_features:
+            continue
+        if feature_levels and special in feature_levels:
+            feat_level = feature_levels[special]
+        else:
+            feat_level = get_feature_level(char_class, special)
+        if feat_level not in features_by_level:
+            features_by_level[feat_level] = []
+        features_by_level[feat_level].append(special)
+
+    skill_increase_levels = get_skill_increase_levels(char_class, char_level)
+    int_training_levels = get_int_skill_training_levels(abilities, char_level)
+
+    for lvl in range(1, char_level + 1):
+        level_items = []
+
+        # Ability boosts
+        lvl_str = str(lvl)
+        if lvl_str in levelled_boosts and levelled_boosts[lvl_str]:
+            boosts = levelled_boosts[lvl_str]
+            level_items.append(f"Boosts: {', '.join(boosts)}")
+
+        # INT-based skill training
+        if lvl in int_training_levels:
+            if int_skill_training and lvl in int_skill_training and int_skill_training[lvl]:
+                level_items.append(f"Skill (INT): {int_skill_training[lvl]}")
+            else:
+                level_items.append("Skill (INT): ___")
+
+        # Feats
+        if lvl in feats_by_level:
+            for feat_type, feat_name in feats_by_level[lvl]:
+                if feat_type == "Awarded Feat":
+                    level_items.append(f"{feat_name}*")
+                else:
+                    type_short = feat_type.replace(" Feat", "")
+                    level_items.append(f"{type_short}: {feat_name}")
+
+        # Class features
+        if lvl in features_by_level:
+            features = features_by_level[lvl]
+            if features:
+                level_items.append(f"Features: {', '.join(features)}")
+
+        # Skill increases
+        if lvl in skill_increase_levels:
+            if skill_increases and lvl in skill_increases and skill_increases[lvl]:
+                level_items.append(f"Skill↑: {skill_increases[lvl]}")
+            else:
+                level_items.append("Skill↑: ___")
+
+        if level_items:
+            lines.append(f"**Level {lvl}:** {' • '.join(level_items)}")
+
+    lines.append("")
+    lines.append("\\* = Granted by ancestry, heritage, or background")
+
+    # Reddit markdown needs double newlines for line breaks
+    return "\n\n".join(lines)
+
+
 def format_post_bluesky(data: dict) -> str:
     """Format character for Bluesky post (compact, ~300 char limit)."""
     build = data.get("build", data)
@@ -1368,6 +1530,74 @@ def read_from_clipboard() -> str:
         sys.exit(1)
 
 
+def parse_build_file(build_file_path: Path) -> tuple:
+    """Parse an existing -build.txt file to extract user choices.
+
+    Extracts:
+    - Skill increases (e.g., "Skill Increase: Diplomacy")
+    - INT-based skill training (e.g., "Skill Training (INT): Religion")
+    - Class feature levels (e.g., "Class Features: Enigma, Maestro")
+
+    Returns:
+        tuple: (skill_increases dict, int_skill_training dict, feature_levels dict)
+    """
+    skill_increases = {}
+    int_skill_training = {}
+    feature_levels = {}
+
+    try:
+        with open(build_file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except (FileNotFoundError, IOError):
+        return skill_increases, int_skill_training, feature_levels
+
+    current_level = None
+    in_progression = False
+
+    for line in content.split('\n'):
+        stripped = line.strip()
+
+        # Detect when we enter the level progression section
+        if stripped == "LEVEL PROGRESSION":
+            in_progression = True
+            continue
+
+        if not in_progression:
+            continue
+
+        # Match "LEVEL X" headers
+        if stripped.startswith("LEVEL ") and stripped[6:].isdigit():
+            current_level = int(stripped[6:])
+            continue
+
+        if current_level is None:
+            continue
+
+        # Parse skill increase lines
+        if stripped.startswith("Skill Increase:"):
+            skill = stripped.replace("Skill Increase:", "").strip()
+            if skill and skill != "___":
+                skill_increases[current_level] = skill
+
+        # Parse INT skill training lines
+        elif stripped.startswith("Skill Training (INT):"):
+            skill = stripped.replace("Skill Training (INT):", "").strip()
+            if skill and skill != "___":
+                int_skill_training[current_level] = skill
+
+        # Parse class features lines
+        elif stripped.startswith("Class Features:"):
+            features_str = stripped.replace("Class Features:", "").strip()
+            if features_str:
+                # Split by comma and assign each feature to current level
+                features = [f.strip() for f in features_str.split(',')]
+                for feature in features:
+                    if feature:
+                        feature_levels[feature] = current_level
+
+    return skill_increases, int_skill_training, feature_levels
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Convert Pathbuilder 2e JSON exports to human-readable text.",
@@ -1378,10 +1608,15 @@ Templates:
   static           Complete character sheet with all stats and features
   condensed        Compact format: feats grouped by type, no levels shown
 
+Post formats (-p):
+  reddit           Compact Reddit markdown (just feats + basic info)
+  reddit-build     Full build progression in Reddit markdown
+  bluesky          Ultra-compact for Bluesky's character limit
+
 Examples:
   %(prog)s character.json                 Output to character-build.txt
   %(prog)s character.json -t static       Output to character-static.txt
-  %(prog)s character.json -t condensed    Output to character-condensed.txt
+  %(prog)s character.json -p reddit-build Output Reddit build to stdout
   %(prog)s -c --stdout                    Read from clipboard, print to stdout
 """
     )
@@ -1389,7 +1624,7 @@ Examples:
     parser.add_argument("input", nargs="?", help="Input JSON file")
     parser.add_argument("-t", "--template", choices=["build", "static", "condensed"],
                         default="build", help="Output template (default: build)")
-    parser.add_argument("-p", "--post", choices=["reddit", "bluesky"],
+    parser.add_argument("-p", "--post", choices=["reddit", "reddit-build", "bluesky"],
                         help="Format for social media post (overrides --template)")
     parser.add_argument("-w", "--width", type=int, default=71,
                         help="Line width for word wrap (default: 71, 0 to disable)")
@@ -1429,6 +1664,33 @@ Examples:
     # Format character based on post format or template
     if args.post == "reddit":
         formatted = format_post_reddit(data)
+    elif args.post == "reddit-build":
+        # Reddit-build needs prompts like the build template
+        skill_increases = {}
+        int_skill_training = {}
+        feature_levels = {}
+
+        # Try to auto-load from existing -build.txt file
+        if input_path:
+            build_file = input_path.parent / f"{input_path.stem}-build.txt"
+            if build_file.exists():
+                skill_increases, int_skill_training, feature_levels = parse_build_file(build_file)
+                if skill_increases or int_skill_training or feature_levels:
+                    print(f"Loaded choices from: {build_file}", file=sys.stderr)
+
+        if not args.no_prompt and not (skill_increases or int_skill_training or feature_levels):
+            build = data.get("build", data)
+            char_class = build.get("class", "Unknown")
+            char_level = build.get("level", 1)
+            profs = build.get("proficiencies", {})
+            abilities = build.get("abilities", {})
+            specials = build.get("specials", [])
+            heritage = build.get("heritage", "")
+            feature_levels = prompt_class_feature_levels(
+                char_class, char_level, specials, heritage)
+            skill_increases, int_skill_training = prompt_skill_training_and_increases(
+                char_class, char_level, profs, abilities)
+        formatted = format_post_reddit_build(data, skill_increases, int_skill_training, feature_levels)
     elif args.post == "bluesky":
         formatted = format_post_bluesky(data)
     elif args.template == "static":
@@ -1437,10 +1699,19 @@ Examples:
         formatted = format_character_condensed(data)
     else:
         # Build template - get prompts interactively unless --no-prompt
-        skill_increases = None
-        int_skill_training = None
-        feature_levels = None
-        if not args.no_prompt:
+        skill_increases = {}
+        int_skill_training = {}
+        feature_levels = {}
+
+        # Try to auto-load from existing -build.txt file
+        if input_path:
+            build_file = input_path.parent / f"{input_path.stem}-build.txt"
+            if build_file.exists():
+                skill_increases, int_skill_training, feature_levels = parse_build_file(build_file)
+                if skill_increases or int_skill_training or feature_levels:
+                    print(f"Loaded choices from: {build_file}", file=sys.stderr)
+
+        if not args.no_prompt and not (skill_increases or int_skill_training or feature_levels):
             build = data.get("build", data)
             char_class = build.get("class", "Unknown")
             char_level = build.get("level", 1)
