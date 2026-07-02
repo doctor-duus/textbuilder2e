@@ -47,6 +47,7 @@ GitHub: https://github.com/doctor-duus/textbuilder2e
 # Hearth Birdsong, a runaway noble gnome phoenix sorcerer (enigma bard archetype) diplomancer
 **Gnome** (Fey-Touched Gnome) **Sorcerer 10**
 Background: Runaway Noble (Genealogy)
+
 `STR -1 | DEX +4 | CON +4 | INT +1 | WIS +3 | CHA +5`
 
 ## Defenses
