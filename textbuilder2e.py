@@ -1836,17 +1836,24 @@ def interactive_mode() -> dict:
     # Output destination
     print("Output destination:")
     print("  1. Print to screen (stdout)")
-    print("  2. Write to file (auto-named)")
+    print("  2. Copy to clipboard (pbcopy)")
+    print("  3. Write to file (auto-named)")
     while True:
-        choice = input("Choose [1/2, default=1]: ").strip()
+        choice = input("Choose [1-3, default=1]: ").strip()
         if choice == "" or choice == "1":
             return_dict["stdout"] = True
+            return_dict["copy"] = False
             break
         elif choice == "2":
             return_dict["stdout"] = False
+            return_dict["copy"] = True
+            break
+        elif choice == "3":
+            return_dict["stdout"] = False
+            return_dict["copy"] = False
             break
         else:
-            print("  Enter 1 or 2")
+            print("  Enter 1-3")
 
     print()
     return return_dict
@@ -1956,6 +1963,8 @@ Examples:
                         help="Read JSON from clipboard (macOS)")
     parser.add_argument("--stdout", action="store_true",
                         help="Print to stdout instead of file")
+    parser.add_argument("--copy", action="store_true",
+                        help="Copy output to clipboard via pbcopy (macOS)")
     parser.add_argument("--no-prompt", action="store_true",
                         help="Skip interactive prompts for class features and skills (build only)")
 
@@ -1969,6 +1978,7 @@ Examples:
         args.post = interactive["post"]
         args.template = interactive["template"]
         args.stdout = interactive["stdout"]
+        args.copy = interactive["copy"]
 
     # Load JSON
     input_path = None
@@ -2061,7 +2071,23 @@ Examples:
         formatted = wrap_text(formatted, args.width)
 
     # Determine output destination
-    if args.stdout or (args.clipboard and not args.output):
+    if args.copy:
+        # Copy to clipboard via pbcopy
+        try:
+            process = subprocess.run(
+                ["pbcopy"],
+                input=formatted,
+                text=True,
+                check=True
+            )
+            print("Output copied to clipboard")
+        except FileNotFoundError:
+            print("Error: pbcopy not found. This option is macOS only.", file=sys.stderr)
+            sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            print(f"Error copying to clipboard: {e}", file=sys.stderr)
+            sys.exit(1)
+    elif args.stdout or (args.clipboard and not args.output):
         print(formatted)
     else:
         if args.output:
