@@ -158,7 +158,7 @@ def format_spells_section(spell_casters: list) -> list:
             if spell_level == 0:
                 level_label = "Cantrips"
             else:
-                level_label = f"Level {spell_level}"
+                level_label = f"Rank {spell_level}"
                 if slots > 0 and not innate:
                     level_label += f" ({slots}/day)"
 
@@ -1095,7 +1095,7 @@ def format_post_reddit_static(data: dict) -> str:
                     if spell_level == 0:
                         spell_by_level.append(f"**Cantrips:** {', '.join(spell_list)}")
                     else:
-                        spell_by_level.append(f"**L{spell_level}:** {', '.join(spell_list)}")
+                        spell_by_level.append(f"**R{spell_level}:** {', '.join(spell_list)}")
 
             if spell_by_level:
                 lines.append(f"**{caster_name}** ({tradition})  ")
