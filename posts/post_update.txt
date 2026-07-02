@@ -1,4 +1,4 @@
-**Title:** Textbuilder2e Update - Now with Reddit markdown output and interactive mode
+**Title:** Textbuilder2e - Convert Pathbuilder JSON exports to readable text and Reddit markdown (update: interactive mode, clipboard support)
 
 **Post:**
 
