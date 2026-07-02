@@ -1096,7 +1096,7 @@ def format_post_reddit_static(data: dict) -> str:
                 lines.append(f"**{caster_name}** ({tradition})  ")
                 for spell_line in spell_by_level:
                     lines.append(f"- {spell_line}")
-        lines.append("")
+                lines.append("")  # Blank line between casters
 
     # Weapons - use bullet list
     weapons = build.get("weapons", [])
