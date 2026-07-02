@@ -935,7 +935,10 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
 
 
 def format_post_reddit_static(data: dict) -> str:
-    """Format static character sheet for Reddit post (markdown)."""
+    """Format static character sheet for Reddit post (markdown).
+
+    Uses bullet lists and explicit line breaks for proper Reddit rendering.
+    """
     build = data.get("build", data)
     abilities = build.get("abilities", {})
     attrs = build.get("attributes", {})
@@ -958,14 +961,11 @@ def format_post_reddit_static(data: dict) -> str:
 
     lines = []
     lines.append(f"# {name}")
-    lines.append(f"`{' | '.join(mods)}`")
-    lines.append("")
-
-    # Basic Info
-    lines.append(f"**{ancestry}** ({heritage}) **{char_class} {level}**")
-    lines.append(f"Background: {background}")
+    lines.append(f"**{ancestry}** ({heritage}) **{char_class} {level}**  ")
+    lines.append(f"Background: {background}  ")
     if build.get("deity") and build.get("deity") != "Not set":
-        lines.append(f"Deity: {build['deity']}")
+        lines.append(f"Deity: {build['deity']}  ")
+    lines.append(f"`{' | '.join(mods)}`")
     lines.append("")
 
     # Defenses
@@ -979,7 +979,7 @@ def format_post_reddit_static(data: dict) -> str:
 
     ac = ac_info.get("acTotal", 10)
     shield = ac_info.get("shieldBonus", 0)
-    ac_str = f"AC {ac}" + (f" ({ac + int(shield)} w/shield)" if shield else "")
+    ac_str = f"**AC {ac}**" + (f" ({ac + int(shield)} w/shield)" if shield else "")
 
     # Saves
     saves = []
@@ -996,7 +996,9 @@ def format_post_reddit_static(data: dict) -> str:
 
     speed = attrs.get("speed", 25) + attrs.get("speedBonus", 0)
 
-    lines.append(f"**HP {total_hp}** | {ac_str} | {' / '.join(saves)} | Per {format_modifier(perc_total)} | Speed {speed}")
+    lines.append(f"- **HP {total_hp}** | {ac_str}")
+    lines.append(f"- **Saves:** {' / '.join(saves)}")
+    lines.append(f"- **Perception:** {format_modifier(perc_total)} | **Speed:** {speed} ft")
     lines.append("")
 
     # Skills
@@ -1031,7 +1033,7 @@ def format_post_reddit_static(data: dict) -> str:
     lines.append(", ".join(sorted(trained_skills)))
     lines.append("")
 
-    # Feats
+    # Feats - use bullet list
     feats = build.get("feats", [])
     if feats:
         lines.append("## Feats")
@@ -1063,14 +1065,14 @@ def format_post_reddit_static(data: dict) -> str:
 
         for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
             if group in feat_groups:
-                lines.append(f"**{group}:** {', '.join(feat_groups[group])}")
+                lines.append(f"- **{group}:** {', '.join(feat_groups[group])}")
 
         for group, feat_list in feat_groups.items():
             if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
-                lines.append(f"**{group}:** {', '.join(feat_list)}")
+                lines.append(f"- **{group}:** {', '.join(feat_list)}")
         lines.append("")
 
-    # Spells (condensed)
+    # Spells - use bullet list
     spell_casters = build.get("spellCasters", [])
     active_casters = [c for c in spell_casters if any(s.get("list", []) for s in c.get("spells", []))]
     if active_casters:
@@ -1086,19 +1088,20 @@ def format_post_reddit_static(data: dict) -> str:
                 spell_list = spell_entry.get("list", [])
                 if spell_list:
                     if spell_level == 0:
-                        spell_by_level.append(f"Cantrips: {', '.join(spell_list)}")
+                        spell_by_level.append(f"**Cantrips:** {', '.join(spell_list)}")
                     else:
-                        spell_by_level.append(f"L{spell_level}: {', '.join(spell_list)}")
+                        spell_by_level.append(f"**L{spell_level}:** {', '.join(spell_list)}")
 
             if spell_by_level:
-                lines.append(f"**{caster_name}** ({tradition}): {' | '.join(spell_by_level)}")
+                lines.append(f"**{caster_name}** ({tradition})  ")
+                for spell_line in spell_by_level:
+                    lines.append(f"- {spell_line}")
         lines.append("")
 
-    # Weapons
+    # Weapons - use bullet list
     weapons = build.get("weapons", [])
     if weapons:
         lines.append("## Weapons")
-        weapon_strs = []
         for weapon in weapons:
             display = weapon.get("display", weapon.get("name", "Unknown"))
             attack = weapon.get("attack", 0)
@@ -1118,11 +1121,10 @@ def format_post_reddit_static(data: dict) -> str:
             if damage_bonus:
                 damage_str += f"+{damage_bonus}" if damage_bonus > 0 else str(damage_bonus)
 
-            weapon_strs.append(f"{display} {format_modifier(attack)}/{damage_str}")
-        lines.append(", ".join(weapon_strs))
+            lines.append(f"- **{display}:** {format_modifier(attack)} to hit, {damage_str} damage")
 
-    # Reddit markdown needs double newlines for line breaks
-    return "\n\n".join(lines)
+    # Join with newlines - bullet lists work with single newlines in Reddit
+    return "\n".join(lines)
 
 
 def format_post_bluesky(data: dict) -> str:
