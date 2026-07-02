@@ -934,6 +934,197 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
     return "\n\n".join(lines)
 
 
+def format_post_reddit_static(data: dict) -> str:
+    """Format static character sheet for Reddit post (markdown)."""
+    build = data.get("build", data)
+    abilities = build.get("abilities", {})
+    attrs = build.get("attributes", {})
+    profs = build.get("proficiencies", {})
+    ac_info = build.get("acTotal", {})
+
+    name = build.get("name", "Unknown")
+    char_class = build.get("class", "Unknown")
+    level = build.get("level", 1)
+    ancestry = build.get("ancestry", "Unknown")
+    heritage = build.get("heritage", "Unknown")
+    background = build.get("background", "Unknown")
+
+    # Ability mods
+    mods = []
+    for abbr in ["str", "dex", "con", "int", "wis", "cha"]:
+        score = abilities.get(abbr, 10)
+        mod = get_modifier(score)
+        mods.append(f"{abbr.upper()} {format_modifier(mod)}")
+
+    lines = []
+    lines.append(f"# {name}")
+    lines.append(f"`{' | '.join(mods)}`")
+    lines.append("")
+
+    # Basic Info
+    lines.append(f"**{ancestry}** ({heritage}) **{char_class} {level}**")
+    lines.append(f"Background: {background}")
+    if build.get("deity") and build.get("deity") != "Not set":
+        lines.append(f"Deity: {build['deity']}")
+    lines.append("")
+
+    # Defenses
+    lines.append("## Defenses")
+    ancestry_hp = attrs.get("ancestryhp", 0)
+    class_hp = attrs.get("classhp", 0)
+    con_mod = get_modifier(abilities.get("con", 10))
+    bonus_hp = attrs.get("bonushp", 0)
+    bonus_per_level = attrs.get("bonushpPerLevel", 0)
+    total_hp = ancestry_hp + (class_hp + con_mod + bonus_per_level) * level + bonus_hp
+
+    ac = ac_info.get("acTotal", 10)
+    shield = ac_info.get("shieldBonus", 0)
+    ac_str = f"AC {ac}" + (f" ({ac + int(shield)} w/shield)" if shield else "")
+
+    # Saves
+    saves = []
+    for save, abbr in [("fortitude", "Fort"), ("reflex", "Ref"), ("will", "Will")]:
+        prof = profs.get(save, 0)
+        ability = {"fortitude": "con", "reflex": "dex", "will": "wis"}[save]
+        ability_mod = get_modifier(abilities.get(ability, 10))
+        total = prof + (level if prof > 0 else 0) + ability_mod
+        saves.append(f"{abbr} {format_modifier(total)}")
+
+    perc_prof = profs.get("perception", 0)
+    perc_mod = get_modifier(abilities.get("wis", 10))
+    perc_total = perc_prof + (level if perc_prof > 0 else 0) + perc_mod
+
+    speed = attrs.get("speed", 25) + attrs.get("speedBonus", 0)
+
+    lines.append(f"**HP {total_hp}** | {ac_str} | {' / '.join(saves)} | Per {format_modifier(perc_total)} | Speed {speed}")
+    lines.append("")
+
+    # Skills
+    lines.append("## Skills")
+    skill_abilities = {
+        "acrobatics": "dex", "arcana": "int", "athletics": "str",
+        "crafting": "int", "deception": "cha", "diplomacy": "cha",
+        "intimidation": "cha", "medicine": "wis", "nature": "wis",
+        "occultism": "int", "performance": "cha", "religion": "wis",
+        "society": "int", "stealth": "dex", "survival": "wis", "thievery": "dex"
+    }
+
+    trained_skills = []
+    for skill, ability in skill_abilities.items():
+        prof = profs.get(skill, 0)
+        if prof > 0:
+            ability_mod = get_modifier(abilities.get(ability, 10))
+            total = prof + level + ability_mod
+            rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(prof, "?")
+            trained_skills.append(f"{skill.capitalize()} {format_modifier(total)}({rank_abbr})")
+
+    # Lores
+    lores = build.get("lores", [])
+    int_mod = get_modifier(abilities.get("int", 10))
+    for lore in lores:
+        lore_name = lore[0] if isinstance(lore, list) else lore
+        lore_prof = lore[1] if isinstance(lore, list) and len(lore) > 1 else 2
+        total = lore_prof + level + int_mod
+        rank_abbr = {2: "T", 4: "E", 6: "M", 8: "L"}.get(lore_prof, "?")
+        trained_skills.append(f"{lore_name} Lore {format_modifier(total)}({rank_abbr})")
+
+    lines.append(", ".join(sorted(trained_skills)))
+    lines.append("")
+
+    # Feats
+    feats = build.get("feats", [])
+    if feats:
+        lines.append("## Feats")
+        feat_groups = {}
+        for feat in feats:
+            feat_name = feat[0] if isinstance(feat, list) else feat
+            feat_type = feat[2] if isinstance(feat, list) and len(feat) > 2 else "Other"
+            feat_level = feat[3] if isinstance(feat, list) and len(feat) > 3 else "?"
+
+            if feat_type == "Heritage":
+                continue
+
+            if feat_type in ["Ancestry Feat"]:
+                group = "Ancestry"
+            elif feat_type in ["Class Feat"]:
+                group = "Class"
+            elif feat_type in ["Skill Feat"]:
+                group = "Skill"
+            elif feat_type in ["General Feat"]:
+                group = "General"
+            elif feat_type in ["Archetype Feat"]:
+                group = "Archetype"
+            else:
+                group = feat_type
+
+            if group not in feat_groups:
+                feat_groups[group] = []
+            feat_groups[group].append(f"{feat_name} ({feat_level})")
+
+        for group in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+            if group in feat_groups:
+                lines.append(f"**{group}:** {', '.join(feat_groups[group])}")
+
+        for group, feat_list in feat_groups.items():
+            if group not in ["Ancestry", "Class", "Archetype", "Skill", "General"]:
+                lines.append(f"**{group}:** {', '.join(feat_list)}")
+        lines.append("")
+
+    # Spells (condensed)
+    spell_casters = build.get("spellCasters", [])
+    active_casters = [c for c in spell_casters if any(s.get("list", []) for s in c.get("spells", []))]
+    if active_casters:
+        lines.append("## Spells")
+        for caster in active_casters:
+            caster_name = caster.get("name", "Unknown")
+            tradition = caster.get("magicTradition", "").capitalize()
+            spells = caster.get("spells", [])
+
+            spell_by_level = []
+            for spell_entry in spells:
+                spell_level = spell_entry.get("spellLevel", 0)
+                spell_list = spell_entry.get("list", [])
+                if spell_list:
+                    if spell_level == 0:
+                        spell_by_level.append(f"Cantrips: {', '.join(spell_list)}")
+                    else:
+                        spell_by_level.append(f"L{spell_level}: {', '.join(spell_list)}")
+
+            if spell_by_level:
+                lines.append(f"**{caster_name}** ({tradition}): {' | '.join(spell_by_level)}")
+        lines.append("")
+
+    # Weapons
+    weapons = build.get("weapons", [])
+    if weapons:
+        lines.append("## Weapons")
+        weapon_strs = []
+        for weapon in weapons:
+            display = weapon.get("display", weapon.get("name", "Unknown"))
+            attack = weapon.get("attack", 0)
+            die = weapon.get("die", "d4")
+            damage_bonus = weapon.get("damageBonus", 0)
+            striking = weapon.get("str", "")
+
+            num_dice = 1
+            if striking == "striking":
+                num_dice = 2
+            elif striking == "greaterStriking":
+                num_dice = 3
+            elif striking == "majorStriking":
+                num_dice = 4
+
+            damage_str = f"{num_dice}{die}"
+            if damage_bonus:
+                damage_str += f"+{damage_bonus}" if damage_bonus > 0 else str(damage_bonus)
+
+            weapon_strs.append(f"{display} {format_modifier(attack)}/{damage_str}")
+        lines.append(", ".join(weapon_strs))
+
+    # Reddit markdown needs double newlines for line breaks
+    return "\n\n".join(lines)
+
+
 def format_post_bluesky(data: dict) -> str:
     """Format character for Bluesky post (compact, ~300 char limit)."""
     build = data.get("build", data)
@@ -1593,14 +1784,15 @@ def interactive_mode() -> dict:
 
     # Output format
     print("Output format:")
-    print("  1. build        - Level-by-level progression (default)")
-    print("  2. static       - Complete character sheet")
-    print("  3. condensed    - Compact feats list")
-    print("  4. reddit       - Reddit markdown (compact)")
-    print("  5. reddit-build - Reddit markdown (full build)")
-    print("  6. bluesky      - Ultra-compact for Bluesky")
+    print("  1. build         - Level-by-level progression (default)")
+    print("  2. static        - Complete character sheet")
+    print("  3. condensed     - Compact feats list")
+    print("  4. reddit        - Reddit markdown (compact)")
+    print("  5. reddit-build  - Reddit markdown (full build)")
+    print("  6. reddit-static - Reddit markdown (character sheet)")
+    print("  7. bluesky       - Ultra-compact for Bluesky")
     while True:
-        choice = input("Choose [1-6, default=1]: ").strip()
+        choice = input("Choose [1-7, default=1]: ").strip()
         if choice == "" or choice == "1":
             return_dict["template"] = "build"
             return_dict["post"] = None
@@ -1622,11 +1814,15 @@ def interactive_mode() -> dict:
             return_dict["post"] = "reddit-build"
             break
         elif choice == "6":
+            return_dict["template"] = "static"
+            return_dict["post"] = "reddit-static"
+            break
+        elif choice == "7":
             return_dict["template"] = "build"
             return_dict["post"] = "bluesky"
             break
         else:
-            print("  Enter 1-6")
+            print("  Enter 1-7")
 
     print()
 
@@ -1730,6 +1926,7 @@ Templates:
 Post formats (-p):
   reddit           Compact Reddit markdown (just feats + basic info)
   reddit-build     Full build progression in Reddit markdown
+  reddit-static    Character sheet in Reddit markdown
   bluesky          Ultra-compact for Bluesky's character limit
 
 Examples:
@@ -1743,7 +1940,7 @@ Examples:
     parser.add_argument("input", nargs="?", help="Input JSON file")
     parser.add_argument("-t", "--template", choices=["build", "static", "condensed"],
                         default="build", help="Output template (default: build)")
-    parser.add_argument("-p", "--post", choices=["reddit", "reddit-build", "bluesky"],
+    parser.add_argument("-p", "--post", choices=["reddit", "reddit-build", "reddit-static", "bluesky"],
                         help="Format for social media post (overrides --template)")
     parser.add_argument("-w", "--width", type=int, default=71,
                         help="Line width for word wrap (default: 71, 0 to disable)")
@@ -1814,6 +2011,8 @@ Examples:
             skill_increases, int_skill_training = prompt_skill_training_and_increases(
                 char_class, char_level, profs, abilities)
         formatted = format_post_reddit_build(data, skill_increases, int_skill_training, feature_levels)
+    elif args.post == "reddit-static":
+        formatted = format_post_reddit_static(data)
     elif args.post == "bluesky":
         formatted = format_post_bluesky(data)
     elif args.template == "static":
