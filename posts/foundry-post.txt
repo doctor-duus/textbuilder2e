@@ -1,0 +1,100 @@
+**Title:** Textbuilder2e - Convert Foundry VTT PF2e actor exports to readable text/Reddit/forum formats
+
+**Post:**
+
+I made a Python script that converts Foundry VTT PF2e actor JSON exports into clean, readable text formats. Useful for sharing builds on Reddit/Discord/forums, printing character sheets, or just having a plain text backup of your characters.
+
+**How to export from Foundry:**
+1. Right-click your character in the Actors sidebar
+2. Export Data
+3. Save the JSON file
+
+**Features:**
+- Auto-detects Foundry VTT vs Pathbuilder JSON
+- Shows subclass next to class (Bloodline, Way, Racket, Muse, etc.)
+- Multiple output formats for different uses
+- Remaster compatible
+
+**Output formats:**
+
+| Flag | Format |
+|------|--------|
+| `-t build` | Level-by-level progression (default) |
+| `-t static` | Complete character sheet |
+| `-t condensed` | Compact feats list |
+| `-p reddit` | Reddit markdown |
+| `-p paizo` | Paizo forum BBCode |
+| `-p bluesky` | Ultra-compact |
+
+**Usage:**
+```
+# Auto-detect format, output build progression
+python textbuilder2e.py fvtt-Actor-MyCharacter.json
+
+# Character sheet format
+python textbuilder2e.py fvtt-Actor-MyCharacter.json -t static
+
+# Reddit markdown, copy to clipboard
+python textbuilder2e.py fvtt-Actor-MyCharacter.json -p reddit --copy
+```
+
+Free, open source, no dependencies beyond Python 3.10+.
+
+GitHub: https://github.com/doctor-duus/textbuilder2e
+
+Also supports Pathbuilder 2e exports if you use both tools!
+
+---
+
+**Example output (static format from Foundry export):**
+
+```
+============================================================
+  Prepotente
+  STR +6  DEX +0  CON +5  INT +2  WIS +1  CHA +4
+============================================================
+
+BASIC INFORMATION
+----------------------------------------
+Class:      Guardian 10
+Ancestry:   Hobgoblin
+Heritage:   Nephilim
+Background: Lastwall Survivor
+Size:       Medium
+Deity:      Pharasma
+
+DEFENSES
+----------------------------------------
+HP: 178
+AC: 10
+
+Saving Throws:
+  Fort: +19 (Expert)
+  Ref: +12 (Trained)
+  Will: +15 (Expert)
+
+Perception: +13 (Trained)
+Speed: 25 ft
+
+SKILLS
+----------------------------------------
+  Acrobatics: +12 (Trained)
+  Athletics: +22 (Master)
+  Crafting: +14 (Trained)
+  Diplomacy: +16 (Trained)
+  Intimidation: +20 (Master)
+  Medicine: +15 (Expert)
+
+FEATS
+----------------------------------------
+  Ancestry Feats:
+    Lvl 1: Remorseless Lash
+    Lvl 5: Agonizing Rebuke
+    Lvl 9: Fiendish Wings
+  Class Feats:
+    Lvl 1: Shield Warfare
+    Lvl 1: Reactive Shield
+    Lvl 2: Punishing Shove
+    Lvl 2: Wrestler Dedication
+    ...
+```
