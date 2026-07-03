@@ -1,0 +1,69 @@
+**Title:** Textbuilder2e - Convert Pathbuilder/Foundry exports to readable text
+
+**Post:**
+
+I made a small Python script that converts Pathbuilder 2e or Foundry VTT JSON exports into clean, readable text formats. Useful for sharing builds on Reddit/Discord/forums, printing character sheets, or just having a plain text backup.
+
+**Three templates:**
+- **build** (default) - level-by-level progression showing your choices
+- **static** - complete character sheet with all stats
+- **condensed** - compact format for quick sharing
+
+**Post formats for sharing:**
+- **reddit** / **reddit-build** / **reddit-static** - Markdown for Reddit
+- **paizo** / **paizo-build** / **paizo-static** - BBCode for Paizo forums
+- **bluesky** - Ultra-compact for character limits
+
+**Features:**
+- Auto-detects Pathbuilder vs Foundry VTT JSON
+- Shows subclass next to class (Bloodline, Way, Racket, Muse, etc.)
+- Remaster compatible (ability modifiers, no alignment)
+- Smart word wrap (default 71 chars, keeps list items intact)
+- Read from clipboard with `-c`
+
+**Usage:**
+```
+textbuilder2e.py character.json              # Build progression
+textbuilder2e.py character.json -t static    # Character sheet
+textbuilder2e.py character.json -p reddit    # Reddit markdown
+textbuilder2e.py character.json -p paizo     # Paizo BBCode
+textbuilder2e.py -c --stdout                 # From clipboard
+```
+
+Free, open source, no dependencies beyond Python 3.10+.
+
+GitHub: https://github.com/doctor-duus/textbuilder2e
+
+Happy to take feedback or PRs if anyone finds it useful!
+
+---
+
+**Example output (condensed format):**
+
+```
+============================================================
+  Hearth Birdsong
+  STR -1  DEX +4  CON +4  INT +1  WIS +3  CHA +5
+============================================================
+
+Gnome (Fey-Touched Gnome) Sorcerer: Phoenix Bloodline 10
+Background: Runaway Noble (Genealogy)
+
+HP 108  AC 26  Fort +18 Ref +18 Will +17  Per +15
+
+Skills: Acrobatics +16(T), Athletics +11(T), Diplomacy +21(M),
+  Genealogy Lore +13(T), Intimidation +17(T), Nature +15(T),
+  Occultism +13(T), Performance +21(M), Religion +15(T)
+
+FEATS
+----------------------------------------
+  Ancestry: Animal Accomplice (1), Empathetic Plea (3),
+    Animal Elocutionist (5), First World Adept (9)
+  Class: Reach Spell (1), Primal Evolution (4), Counter Perform (6),
+    Advanced Muse's Whispers (8), Signature Spell Expansion (10)
+  Archetype: Bard Dedication (2), Basic Muse's Whispers (4),
+    Inspirational Performance (6)
+  Skill: Group Coercion (2), Bon Mot (4), Intimidating Prowess (6),
+    Terrified Retreat (8), Scare to Death (10)
+  General: Canny Acumen (3), Ancestral Paragon (7)
+```
