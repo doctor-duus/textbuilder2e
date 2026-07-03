@@ -1,11 +1,12 @@
 # Textbuilder2e
 
-Convert [Pathbuilder 2e](https://pathbuilder2e.com/) JSON exports to human-readable text formats.
+Convert [Pathbuilder 2e](https://pathbuilder2e.com/) or [Foundry VTT](https://foundryvtt.com/) PF2e JSON exports to human-readable text formats.
 
 ## Features
 
+- **Multiple input sources**: Pathbuilder 2e and Foundry VTT PF2e (auto-detected)
 - **Multiple templates**: Build progression, static sheet, or condensed format
-- **Social media formats**: Reddit (markdown) and Bluesky (compact) post formats
+- **Social media formats**: Reddit (markdown), Paizo forums (BBCode), and Bluesky (compact)
 - **Clipboard support**: Read JSON directly from clipboard (macOS)
 - **Remaster compatible**: Uses ability modifiers (not scores), no alignment
 
@@ -31,9 +32,14 @@ ln -s /path/to/textbuilder2e.py ~/bin/textbuilder
 
 ## Usage
 
-First, export your character from Pathbuilder 2e:
+### From Pathbuilder 2e
 1. Open your character in Pathbuilder 2e
 2. Menu → Export Character → Export to Foundry VTT (JSON)
+3. Save the JSON file
+
+### From Foundry VTT
+1. Right-click your character in the Actors sidebar
+2. Export Data
 3. Save the JSON file
 
 Then convert to text:
@@ -56,6 +62,9 @@ textbuilder2e.py character.json -t static -o mycharacter.txt
 
 # Format for Reddit post -> character-reddit.txt
 textbuilder2e.py character.json -p reddit
+
+# Format for Paizo forums (BBCode) -> character-paizo.txt
+textbuilder2e.py character.json -p paizo
 
 # Format for Bluesky post (print to stdout)
 textbuilder2e.py character.json -p bluesky --stdout
@@ -87,8 +96,13 @@ Shows level-by-level progression: ancestry/background choices, class features, f
 Compact format for sharing: just the key choices with feats grouped by type (Ancestry, Class, Skill, General).
 
 ### Post Formats
-For sharing builds on social media:
+For sharing builds on social media and forums:
 - **reddit**: Markdown format with bold headings, feats grouped by type
+- **reddit-build**: Full build progression in Reddit markdown
+- **reddit-static**: Character sheet in Reddit markdown
+- **paizo**: Compact Paizo BBCode (just feats + basic info)
+- **paizo-build**: Full build progression in Paizo BBCode
+- **paizo-static**: Character sheet in Paizo BBCode
 - **bluesky**: Ultra-compact format (~300 chars) with just key class feats
 
 ## Options
@@ -96,7 +110,8 @@ For sharing builds on social media:
 | Flag | Description |
 |------|-------------|
 | `-t`, `--template` | Output template: `build`, `static`, or `condensed` |
-| `-p`, `--post` | Social media format: `reddit` or `bluesky` (overrides template) |
+| `-p`, `--post` | Post format: `reddit`, `reddit-build`, `reddit-static`, `paizo`, `paizo-build`, `paizo-static`, or `bluesky` |
+| `--json-source` | Input format: `auto` (default), `pathbuilder`, or `foundry` |
 | `-w`, `--width` | Line width for word wrap (default: 71, 0 to disable) |
 | `-o`, `--output` | Output file (default: `<input>-<template>.txt`) |
 | `-c`, `--clipboard` | Read JSON from clipboard (macOS) |

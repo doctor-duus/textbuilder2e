@@ -255,6 +255,291 @@ def _wrap_list_line(content: str, indent: str, width: int) -> list:
     return result_lines
 
 
+def convert_foundry_to_pathbuilder(data: dict) -> dict:
+    """Convert Foundry VTT PF2e actor JSON to Pathbuilder-like format.
+
+    This allows all existing formatters to work with Foundry exports.
+    """
+    items = data.get("items", [])
+
+    # Find key items by type
+    ancestry_item = next((i for i in items if i.get("type") == "ancestry"), {})
+    heritage_item = next((i for i in items if i.get("type") == "heritage"), {})
+    background_item = next((i for i in items if i.get("type") == "background"), {})
+    class_item = next((i for i in items if i.get("type") == "class"), {})
+    deity_item = next((i for i in items if i.get("type") == "deity"), {})
+
+    # Basic info
+    name = data.get("name", "Unknown Character")
+    level = data.get("system", {}).get("details", {}).get("level", {}).get("value", 1)
+    char_class = class_item.get("name", "Unknown")
+    ancestry = ancestry_item.get("name", "Unknown")
+    heritage = heritage_item.get("name", "Unknown")
+    background = background_item.get("name", "Unknown")
+    deity = deity_item.get("name", "Not set")
+
+    # Size mapping
+    size_map = {"tiny": 0, "sm": 1, "med": 2, "lg": 3, "huge": 4, "grg": 5}
+    size_name_map = {"tiny": "Tiny", "sm": "Small", "med": "Medium", "lg": "Large", "huge": "Huge", "grg": "Gargantuan"}
+    ancestry_size = ancestry_item.get("system", {}).get("size", "med")
+    size = size_map.get(ancestry_size, 2)
+    size_name = size_name_map.get(ancestry_size, "Medium")
+
+    # Calculate ability scores from boosts
+    abilities = {"str": 10, "dex": 10, "con": 10, "int": 10, "wis": 10, "cha": 10}
+
+    # Ancestry boosts and flaws
+    ancestry_sys = ancestry_item.get("system", {})
+    ancestry_boosts = ancestry_sys.get("boosts", {})
+    for boost_key, boost_data in ancestry_boosts.items():
+        boost_values = boost_data.get("value", [])
+        if len(boost_values) == 1:
+            # Fixed boost
+            abilities[boost_values[0]] = abilities.get(boost_values[0], 10) + 2
+        elif boost_data.get("selected"):
+            # Free boost with selection
+            abilities[boost_data["selected"]] = abilities.get(boost_data["selected"], 10) + 2
+
+    # Alternate ancestry boosts (if used)
+    alt_boosts = ancestry_sys.get("alternateAncestryBoosts", [])
+    if alt_boosts:
+        # Using alternate boosts - these replace normal boosts
+        for ab in alt_boosts:
+            abilities[ab] = abilities.get(ab, 10) + 2
+
+    # Ancestry flaws
+    ancestry_flaws = ancestry_sys.get("flaws", {})
+    for flaw_key, flaw_data in ancestry_flaws.items():
+        flaw_values = flaw_data.get("value", [])
+        for flaw in flaw_values:
+            abilities[flaw] = abilities.get(flaw, 10) - 2
+
+    # Background boosts
+    bg_boosts = background_item.get("system", {}).get("boosts", {})
+    for boost_key, boost_data in bg_boosts.items():
+        if boost_data.get("selected"):
+            abilities[boost_data["selected"]] = abilities.get(boost_data["selected"], 10) + 2
+
+    # Class key ability
+    key_ability = data.get("system", {}).get("details", {}).get("keyability", {}).get("value", "")
+    if key_ability:
+        abilities[key_ability] = abilities.get(key_ability, 10) + 2
+
+    # Level boosts (from system.build.attributes.boosts)
+    level_boosts = data.get("system", {}).get("build", {}).get("attributes", {}).get("boosts", {})
+    for boost_level, boost_list in level_boosts.items():
+        boost_level_int = int(boost_level)
+        if boost_level_int <= level:
+            for ab in boost_list:
+                abilities[ab] = abilities.get(ab, 10) + 2
+
+    # Proficiencies - convert from Foundry rank (0-4) to Pathbuilder format (0,2,4,6,8)
+    foundry_skills = data.get("system", {}).get("skills", {})
+    profs = {}
+    skill_name_map = {
+        "acrobatics": "acrobatics", "arcana": "arcana", "athletics": "athletics",
+        "crafting": "crafting", "deception": "deception", "diplomacy": "diplomacy",
+        "intimidation": "intimidation", "medicine": "medicine", "nature": "nature",
+        "occultism": "occultism", "performance": "performance", "religion": "religion",
+        "society": "society", "stealth": "stealth", "survival": "survival", "thievery": "thievery"
+    }
+    for skill, skill_data in foundry_skills.items():
+        if skill in skill_name_map:
+            rank = skill_data.get("rank", 0)
+            profs[skill_name_map[skill]] = rank * 2  # Convert 0-4 to 0,2,4,6,8
+
+    # Class proficiencies from class item
+    class_sys = class_item.get("system", {})
+
+    # Perception and saves - derive from class data or use defaults
+    # Foundry doesn't export calculated proficiencies, so we estimate from class
+    perception_rank = class_sys.get("perception", 1)
+    profs["perception"] = perception_rank * 2
+
+    saves_data = class_sys.get("savingThrows", {})
+    profs["fortitude"] = saves_data.get("fortitude", 1) * 2
+    profs["reflex"] = saves_data.get("reflex", 1) * 2
+    profs["will"] = saves_data.get("will", 1) * 2
+
+    # Defense proficiencies
+    defenses = class_sys.get("defenses", {})
+    profs["unarmored"] = defenses.get("unarmored", 1) * 2
+    profs["light"] = defenses.get("light", 0) * 2
+    profs["medium"] = defenses.get("medium", 0) * 2
+    profs["heavy"] = defenses.get("heavy", 0) * 2
+
+    # Weapon proficiencies
+    attacks = class_sys.get("attacks", {})
+    profs["unarmed"] = attacks.get("unarmed", 1) * 2
+    profs["simple"] = attacks.get("simple", 1) * 2
+    profs["martial"] = attacks.get("martial", 0) * 2
+    profs["advanced"] = attacks.get("advanced", 0) * 2
+
+    # Class DC
+    profs["classDC"] = class_sys.get("classDC", 1) * 2
+
+    # Feats - extract from items
+    feats = []
+    feat_type_map = {
+        "ancestry": "Ancestry Feat",
+        "class": "Class Feat",
+        "skill": "Skill Feat",
+        "general": "General Feat",
+        "archetype": "Archetype Feat",
+    }
+
+    for item in items:
+        if item.get("type") == "feat":
+            feat_name = item.get("name", "Unknown")
+            feat_sys = item.get("system", {})
+            category = feat_sys.get("category", "")
+            feat_level = feat_sys.get("level", {}).get("value", 1)
+            taken_level = feat_sys.get("level", {}).get("taken", feat_level)
+
+            # Skip classfeatures - they go in specials, not feats (like Pathbuilder)
+            if category == "classfeature":
+                continue
+
+            # Map category to Pathbuilder feat type
+            if category in feat_type_map:
+                feat_type = feat_type_map[category]
+            else:
+                feat_type = "Other"
+
+            # Format: [name, note, type, level]
+            feats.append([feat_name, None, feat_type, taken_level])
+
+    # Heritage is a special feat
+    if heritage_item:
+        feats.insert(0, [heritage, None, "Heritage", 1])
+
+    # Class features (specials)
+    specials = []
+    for item in items:
+        if item.get("type") == "feat":
+            if item.get("system", {}).get("category") == "classfeature":
+                specials.append(item.get("name", "Unknown"))
+
+    # Lore skills
+    lores = []
+    for item in items:
+        if item.get("type") == "lore":
+            lore_name = item.get("name", "Unknown")
+            lore_rank = item.get("system", {}).get("proficient", {}).get("value", 1)
+            lores.append([lore_name, lore_rank * 2])
+
+    # Equipment, weapons, armor
+    equipment = []
+    weapons = []
+    armor = []
+
+    for item in items:
+        item_type = item.get("type", "")
+        item_name = item.get("name", "Unknown")
+
+        if item_type == "weapon":
+            weapon_sys = item.get("system", {})
+            damage = weapon_sys.get("damage", {})
+            weapons.append({
+                "name": item_name,
+                "display": item_name,
+                "die": damage.get("die", "d4"),
+                "damageType": damage.get("damageType", ""),
+                "attack": 0,  # Would need to calculate
+                "damageBonus": 0,
+                "str": "",  # striking rune
+            })
+        elif item_type == "armor":
+            armor.append({
+                "name": item_name,
+                "display": item_name,
+                "worn": item.get("system", {}).get("equipped", {}).get("carryType") == "worn"
+            })
+        elif item_type == "shield":
+            armor.append({
+                "name": item_name,
+                "display": item_name,
+                "worn": item.get("system", {}).get("equipped", {}).get("carryType") == "worn"
+            })
+        elif item_type == "equipment":
+            qty = item.get("system", {}).get("quantity", 1)
+            equipment.append([item_name, qty, ""])
+        elif item_type == "consumable":
+            qty = item.get("system", {}).get("quantity", 1)
+            equipment.append([item_name, qty, ""])
+
+    # Attributes
+    ancestry_hp = ancestry_item.get("system", {}).get("hp", 8)
+    class_hp = class_item.get("system", {}).get("hp", 8)
+    speed = ancestry_item.get("system", {}).get("speed", 25)
+
+    # Languages
+    languages = ancestry_item.get("system", {}).get("languages", {}).get("value", [])
+
+    # Build the Pathbuilder-like structure
+    build = {
+        "name": name,
+        "class": char_class,
+        "dualClass": None,
+        "level": level,
+        "ancestry": ancestry,
+        "heritage": heritage,
+        "background": background,
+        "deity": deity,
+        "size": size,
+        "sizeName": size_name,
+        "keyability": key_ability,
+        "abilities": abilities,
+        "attributes": {
+            "ancestryhp": ancestry_hp,
+            "classhp": class_hp,
+            "bonushp": 0,
+            "bonushpPerLevel": 0,
+            "speed": speed,
+            "speedBonus": 0,
+        },
+        "proficiencies": profs,
+        "feats": feats,
+        "specials": specials,
+        "lores": lores,
+        "equipment": equipment,
+        "weapons": weapons,
+        "armor": armor,
+        "languages": languages,
+        "spellCasters": [],  # Would need complex extraction
+        "money": {"pp": 0, "gp": 0, "sp": 0, "cp": 0},
+        "pets": [],
+        "familiars": [],
+    }
+
+    return {"success": True, "build": build}
+
+
+def detect_json_source(data: dict) -> str:
+    """Detect whether JSON is from Pathbuilder or Foundry VTT.
+
+    Returns 'pathbuilder' or 'foundry'.
+    """
+    # Foundry VTT exports have 'items' array and 'system' object
+    if "items" in data and "system" in data:
+        # Check for PF2e-specific fields
+        if "prototypeToken" in data or data.get("type") == "character":
+            return "foundry"
+
+    # Pathbuilder has 'build' object with specific structure
+    if "build" in data:
+        build = data["build"]
+        if "class" in build and "ancestry" in build and "feats" in build:
+            return "pathbuilder"
+
+    # Pathbuilder without wrapper (just the build object)
+    if "class" in data and "ancestry" in data and "feats" in data:
+        return "pathbuilder"
+
+    # Default to pathbuilder for backwards compatibility
+    return "pathbuilder"
+
+
 def format_character_static(data: dict) -> str:
     """Convert Pathbuilder JSON to formatted text (static character sheet)."""
     build = data.get("build", data)
@@ -2438,9 +2723,14 @@ def parse_build_file(build_file_path: Path) -> tuple:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert Pathbuilder 2e JSON exports to human-readable text.",
+        description="Convert Pathbuilder 2e or Foundry VTT JSON exports to human-readable text.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+JSON sources (--json-source):
+  auto (default)   Auto-detect based on JSON structure
+  pathbuilder      Pathbuilder 2e JSON export
+  foundry          Foundry VTT PF2e actor JSON export
+
 Templates:
   build (default)  Level-by-level progression showing choices at each level
   static           Complete character sheet with all stats and features
@@ -2460,6 +2750,7 @@ Examples:
   %(prog)s character.json -t static       Output to character-static.txt
   %(prog)s character.json -p reddit-build Output Reddit build to stdout
   %(prog)s -c --stdout                    Read from clipboard, print to stdout
+  %(prog)s fvtt-actor.json                Auto-detect Foundry VTT format
 """
     )
 
@@ -2480,6 +2771,8 @@ Examples:
                         help="Copy output to clipboard via pbcopy (macOS)")
     parser.add_argument("--no-prompt", action="store_true",
                         help="Skip interactive prompts for class features and skills (build only)")
+    parser.add_argument("--json-source", choices=["pathbuilder", "foundry", "auto"],
+                        default="auto", help="JSON source format (default: auto-detect)")
 
     args = parser.parse_args()
 
@@ -2510,6 +2803,16 @@ Examples:
             sys.exit(1)
         with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+
+    # Detect and convert JSON source format
+    json_source = args.json_source
+    if json_source == "auto":
+        json_source = detect_json_source(data)
+        if json_source == "foundry":
+            print("Detected Foundry VTT format, converting...", file=sys.stderr)
+
+    if json_source == "foundry":
+        data = convert_foundry_to_pathbuilder(data)
 
     # Format character based on post format or template
     if args.post == "reddit":
