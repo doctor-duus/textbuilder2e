@@ -1,0 +1,84 @@
+**Title:** Textbuilder2e - Convert Pathbuilder/Foundry JSON exports to readable text (update: Paizo BBCode, Foundry VTT, subclass display)
+
+**Post:**
+
+Update to my Pathbuilder JSON converter! [Previous post here.](https://www.reddit.com/r/Pathfinder2e/comments/1tc9fce/textbuilder2e_convert_pathbuilder_exports_to_text/)
+
+**New features:**
+
+- **Foundry VTT support** - Auto-detects and converts Foundry PF2e actor exports
+- **Paizo BBCode formats** - Output formatted for Paizo forum posts
+- **Subclass display** - Shows Bloodline, Way, Racket, Muse, etc. next to class (e.g., "Sorcerer: Phoenix Bloodline")
+- **Interactive mode** - Just run the script with no arguments, it finds JSON files and prompts you
+- **Copy to clipboard** - `--copy` pipes output straight to your clipboard (macOS)
+- **Auto-load build choices** - If you've run the build format before, it remembers your skill increase selections
+
+**Output formats:**
+
+| Flag | Format |
+|------|--------|
+| `-t build` | Level-by-level progression (default) |
+| `-t static` | Complete character sheet |
+| `-t condensed` | Compact feats list |
+| `-p reddit` | Reddit markdown (compact) |
+| `-p reddit-build` | Reddit markdown (full build) |
+| `-p reddit-static` | Reddit markdown (character sheet) |
+| `-p paizo` | Paizo BBCode (compact) |
+| `-p paizo-build` | Paizo BBCode (full build) |
+| `-p paizo-static` | Paizo BBCode (character sheet) |
+| `-p bluesky` | Ultra-compact for Bluesky |
+
+**Quick usage:**
+
+```
+# Interactive mode - finds JSON files, prompts for options
+python textbuilder2e.py
+
+# Reddit format, copy to clipboard
+python textbuilder2e.py character.json -p reddit-static --copy
+
+# Read from clipboard, output to stdout
+python textbuilder2e.py -c --stdout
+```
+
+GitHub: https://github.com/doctor-duus/textbuilder2e
+
+---
+
+**Example output (reddit-static format):**
+
+# Hearth Birdsong, a runaway noble gnome phoenix sorcerer (enigma bard archetype) diplomancer
+**Gnome** (Fey-Touched Gnome) **Sorcerer: Phoenix Bloodline 10**
+Background: Runaway Noble (Genealogy)
+
+`STR -1 | DEX +4 | CON +4 | INT +1 | WIS +3 | CHA +5`
+
+## Defenses
+- **HP 108** | **AC 26** (28 w/shield)
+- **Saves:** Fort +18 / Ref +18 / Will +17
+- **Perception:** +15 | **Speed:** 30 ft
+
+## Skills
+Acrobatics +16(T), Athletics +11(T), Diplomacy +21(M), Genealogy Lore +13(T), Intimidation +17(T), Nature +15(T), Occultism +13(T), Performance +21(M), Religion +15(T)
+
+## Feats
+- **Ancestry:** Animal Accomplice (1), Empathetic Plea (3), Animal Elocutionist (5), First World Adept (9)
+- **Class:** Reach Spell (2), Primal Evolution (4), Counter Perform (6), Advanced Muse's Whispers (8), Signature Spell Expansion (10)
+- **Archetype:** Bard Dedication (2), Basic Muse's Whispers (4), Basic Bard Spellcasting (6), Anthemic Performance (8), Advanced Muse's Whispers (10)
+- **Skill:** Assurance [Athletics] (2), Glad-Hand (4), Distracting Performance (6), Shameless Request (8), Battle Cry (10)
+- **General:** Ancestral Paragon (3), Fleet (7)
+- **Bard Feat:** Loremaster's Etude (4), Multifarious Muse [Maestro] (8), Multifarious Muse [Polymath] (10)
+
+## Spells
+**Sorcerer** (Primal)
+- **Cantrips:** Electric Arc, Frostbite, Prestidigitation, Ignition, Detect Magic, Eat Fire
+- **R1:** Heal, Charm, Goblin Pox, Burning Hands
+- **R2:** Revealing Light, Sudden Bolt, Floating Flame, See Invisibility
+- **R3:** Haste, Fear, Slow, Fireball
+- **R4:** Air Walk, Mountain Resilience, Unfettered Movement, Remove Curse
+
+**Archetype Bard** (Occult)
+- **Cantrips:** Daze, Figment
+- **R1:** Phantom Pain
+- **R2:** Laughing Fit
+- **R3:** Heroism
