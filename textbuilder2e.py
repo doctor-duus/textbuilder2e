@@ -103,6 +103,50 @@ def proficiency_rank(level: int) -> str:
     return ranks.get(level, f"Unknown ({level})")
 
 
+def extract_subclass(specials: list) -> str | None:
+    """Extract subclass/specialization from class features.
+
+    Returns the subclass name (e.g., "Phoenix Bloodline", "Pistolero") or None.
+    """
+    # Patterns: "Prefix: Value" or "Prefix of the Value"
+    subclass_prefixes = [
+        "Bloodline",      # Sorcerer
+        "Way of the",     # Gunslinger
+        "Racket",         # Rogue (stored as "Racket: X" or in name)
+        "Muse",           # Bard
+        "Doctrine",       # Cleric
+        "Mystery",        # Oracle
+        "Instinct",       # Barbarian
+        "Methodology",    # Investigator
+        "Research Field", # Alchemist
+        "Hunter's Edge",  # Ranger
+        "Cause",          # Champion
+        "Order",          # Druid
+        "School",         # Wizard
+        "Innovation",     # Inventor
+        "Conscious Mind", # Psychic
+        "Way",            # Monk
+        "Thesis",         # Magus
+        "Awareness",      # Guardian
+    ]
+
+    for special in specials:
+        if not isinstance(special, str):
+            continue
+
+        # Check "Prefix: Value" pattern (e.g., "Bloodline: Phoenix")
+        for prefix in subclass_prefixes:
+            if special.startswith(f"{prefix}: "):
+                value = special.split(": ", 1)[1]
+                return f"{value} {prefix}"
+            elif special.startswith(f"{prefix} of the "):
+                # "Way of the Pistolero" -> "Pistolero"
+                value = special.replace(f"{prefix} of the ", "")
+                return value
+
+    return None
+
+
 def format_spells_section(spell_casters: list) -> list:
     """Format spellcasting section for character sheet.
 
@@ -563,7 +607,11 @@ def format_character_static(data: dict) -> str:
     # Basic Info
     lines.append("BASIC INFORMATION")
     lines.append("-" * 40)
-    lines.append(f"Class:      {build.get('class', 'Unknown')} {build.get('level', '?')}")
+    char_class = build.get('class', 'Unknown')
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
+    lines.append(f"Class:      {class_display} {build.get('level', '?')}")
     if build.get("dualClass"):
         lines.append(f"Dual Class: {build['dualClass']}")
     lines.append(f"Ancestry:   {build.get('ancestry', 'Unknown')}")
@@ -861,8 +909,11 @@ def format_character_condensed(data: dict) -> str:
     ancestry = build.get('ancestry', 'Unknown')
     heritage = build.get('heritage', 'Unknown')
     background = build.get('background', 'Unknown')
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
-    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"{ancestry} ({heritage}) {class_display} {level}")
     lines.append(f"Background: {background}")
     if build.get("dualClass"):
         lines.append(f"Dual Class: {build['dualClass']}")
@@ -1002,6 +1053,9 @@ def format_post_reddit(data: dict) -> str:
     ancestry = build.get("ancestry", "Unknown")
     heritage = build.get("heritage", "Unknown")
     background = build.get("background", "Unknown")
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
     # Ability mods
     mods = []
@@ -1012,7 +1066,7 @@ def format_post_reddit(data: dict) -> str:
 
     lines = []
     lines.append(f"**{name}**")
-    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"{ancestry} ({heritage}) {class_display} {level}")
     lines.append(f"Background: {background}")
     lines.append(f"`{' | '.join(mods)}`")
 
@@ -1121,17 +1175,13 @@ def format_post_reddit_build(data: dict, skill_increases: dict = None,
     # Class
     lines.append("## Class")
     specials = build.get("specials", [])
-    subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
-                         "Muse" in s or "Bloodline" in s or "Order" in s or
-                         "Methodology" in s or "Way" in s or "Cause" in s or
-                         "Tactics" in s]
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
-    class_line = f"**Class:** {char_class}"
+    class_line = f"**Class:** {class_display}"
     if key_ability:
         class_line += f" (Key: {key_ability})"
     lines.append(class_line)
-    if subclass_features:
-        lines.append(f"**Subclass:** {subclass_features[0]}")
     lines.append("")
 
     # Level Progression
@@ -1245,6 +1295,9 @@ def format_post_reddit_static(data: dict, feat_notes: dict = None) -> str:
     ancestry = build.get("ancestry", "Unknown")
     heritage = build.get("heritage", "Unknown")
     background = build.get("background", "Unknown")
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
     # Ability mods
     mods = []
@@ -1255,7 +1308,7 @@ def format_post_reddit_static(data: dict, feat_notes: dict = None) -> str:
 
     lines = []
     lines.append(f"# {name}")
-    lines.append(f"**{ancestry}** ({heritage}) **{char_class} {level}**  ")
+    lines.append(f"**{ancestry}** ({heritage}) **{class_display} {level}**  ")
     lines.append(f"Background: {background}")
     if build.get("deity") and build.get("deity") != "Not set":
         lines.append(f"Deity: {build['deity']}")
@@ -1439,6 +1492,9 @@ def format_post_bluesky(data: dict) -> str:
     char_class = build.get("class", "Unknown")
     level = build.get("level", "?")
     ancestry = build.get("ancestry", "Unknown")
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
     # Compact ability mods
     mods = []
@@ -1449,7 +1505,7 @@ def format_post_bluesky(data: dict) -> str:
 
     lines = []
     lines.append(f"{name}")
-    lines.append(f"{ancestry} {char_class} {level}")
+    lines.append(f"{ancestry} {class_display} {level}")
     lines.append(" ".join(mods))
 
     # Just list key feats compactly
@@ -1482,6 +1538,9 @@ def format_post_paizo(data: dict) -> str:
     ancestry = build.get("ancestry", "Unknown")
     heritage = build.get("heritage", "Unknown")
     background = build.get("background", "Unknown")
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
     # Ability mods
     mods = []
@@ -1492,7 +1551,7 @@ def format_post_paizo(data: dict) -> str:
 
     lines = []
     lines.append(f"[b]{name}[/b]")
-    lines.append(f"{ancestry} ({heritage}) {char_class} {level}")
+    lines.append(f"{ancestry} ({heritage}) {class_display} {level}")
     lines.append(f"Background: {background}")
     lines.append(f"[b]{' | '.join(mods)}[/b]")
 
@@ -1601,16 +1660,14 @@ def format_post_paizo_build(data: dict, skill_increases: dict = None,
     # Class
     lines.append("[b]Class[/b]")
     specials = build.get("specials", [])
-    subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
-                         "Muse" in s or "Bloodline" in s or "Order" in s or
-                         "Methodology" in s or "Way" in s or "Cause" in s or
-                         "Tactics" in s]
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
-    class_line = f"[b]Class:[/b] {char_class}"
+    class_line = f"[b]Class:[/b] {class_display}"
     if key_ability:
         class_line += f" (Key: {key_ability})"
     lines.append(class_line)
-    if subclass_features:
+    if False:  # Subclass now shown inline
         lines.append(f"[b]Subclass:[/b] {subclass_features[0]}")
     lines.append("")
 
@@ -1724,6 +1781,9 @@ def format_post_paizo_static(data: dict, feat_notes: dict = None) -> str:
     ancestry = build.get("ancestry", "Unknown")
     heritage = build.get("heritage", "Unknown")
     background = build.get("background", "Unknown")
+    specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
 
     # Ability mods
     mods = []
@@ -1734,7 +1794,7 @@ def format_post_paizo_static(data: dict, feat_notes: dict = None) -> str:
 
     lines = []
     lines.append(f"[b]{name}[/b]")
-    lines.append(f"[b]{ancestry}[/b] ({heritage}) [b]{char_class} {level}[/b]")
+    lines.append(f"[b]{ancestry}[/b] ({heritage}) [b]{class_display} {level}[/b]")
     lines.append(f"Background: {background}")
     if build.get("deity") and build.get("deity") != "Not set":
         lines.append(f"Deity: {build['deity']}")
@@ -2169,10 +2229,17 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
 
     # Specials (class features)
     specials = build.get("specials", [])
+    subclass = extract_subclass(specials)
+    class_display = f"{char_class}: {subclass}" if subclass else char_class
+
+    # Find the raw subclass feature string to skip it in class features
     subclass_features = [s for s in specials if "Racket" in s or "Doctrine" in s or
                          "Muse" in s or "Bloodline" in s or "Order" in s or
                          "Methodology" in s or "Way" in s or "Cause" in s or
-                         "Tactics" in s]
+                         "Tactics" in s or "Instinct" in s or "Research Field" in s or
+                         "Hunter's Edge" in s or "Mystery" in s or "Thesis" in s or
+                         "Innovation" in s or "Conscious Mind" in s or "School" in s or
+                         "Awareness" in s]
 
     # Group class features by level
     features_by_level = {}
@@ -2219,13 +2286,11 @@ def format_character_build(data: dict, skill_increases: dict = None, int_skill_t
     # =====================
     lines.append("CLASS")
     lines.append("-" * 40)
-    lines.append(f"Class: {char_class}")
+    lines.append(f"Class: {class_display}")
     if key_ability:
         lines.append(f"  Key Ability: {key_ability}")
     if class_boosts:
         lines.append(f"  Class Boost: {', '.join(class_boosts)}")
-    if subclass_features:
-        lines.append(f"  Subclass: {subclass_features[0]}")
     lines.append("")
 
     # =====================
